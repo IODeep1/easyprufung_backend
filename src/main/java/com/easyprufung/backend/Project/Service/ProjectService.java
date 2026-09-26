@@ -5,7 +5,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.easyprufung.backend.AI.Models.ChatRequest;
 import com.easyprufung.backend.AI.Models.CustomChatResponse;
 import com.easyprufung.backend.AI.Service.OpenAIService;
-import com.easyprufung.backend.Mixpanel.Service.MixpanelService;
 import com.easyprufung.backend.Project.Constants.ProjectConstants;
 import com.easyprufung.backend.Project.ContactForm;
 import com.easyprufung.backend.Project.DTO.*;
@@ -74,9 +73,6 @@ public class ProjectService {
 
     @Autowired
     SubscriptionService subscriptionService;
-
-    @Autowired
-    MixpanelService mixpanelService;
 
     @Autowired
     DomainCheckerService domainCheckerService;

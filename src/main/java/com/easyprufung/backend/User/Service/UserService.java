@@ -83,8 +83,6 @@ public class UserService {
                 savedUser.setLastname(userDTO.getLastname());
             if(StringUtils.hasText(userDTO.getEmail()))
                 savedUser.setEmail(userDTO.getEmail());
-            if(StringUtils.hasText(userDTO.getCodingKnowledgeLevel()))
-                savedUser.setCodingKnowledgeLevel(userDTO.getCodingKnowledgeLevel());
             if(StringUtils.hasText(userDTO.getPassword())){
                 savedUser.setPassword(AESEncryption.encrypt(userDTO.getPassword()));
             }

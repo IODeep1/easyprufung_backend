@@ -31,9 +31,6 @@ public class User {
     @Column
     private String uuid;
 
-    @Column(name = "github_username")
-    private String githubUsername;
-
     @Column
     private String firstname;
 
@@ -45,12 +42,6 @@ public class User {
 
     @Column
     private String password;
-
-    @Column(name = "coding_knowledge_level")
-    private String codingKnowledgeLevel;
-
-    @Column(name = "user_role")
-    private String userRole;
 
     @Column(name = "reset_password_token")
     private String resetPasswordToken;
