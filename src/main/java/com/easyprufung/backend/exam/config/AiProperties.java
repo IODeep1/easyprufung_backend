@@ -16,7 +16,7 @@ public class AiProperties {
     private String responsesPath = "/responses";
     private String organization;
     private String project;
-    private int maxOutputTokens = 4000;
+    private int maxOutputTokens = 25000;
     private Duration connectTimeout = Duration.ofSeconds(5);
     private Duration readTimeout = Duration.ofSeconds(120);
 }

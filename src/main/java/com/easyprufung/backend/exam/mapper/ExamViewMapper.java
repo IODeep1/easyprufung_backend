@@ -46,4 +46,22 @@ public class ExamViewMapper {
                 json.read(result.getQuestionResultsJson(), QUESTIONS), result.getOverallFeedback(),
                 result.getEvaluatedAt());
     }
+
+    public ExamSessionSummaryView toSummary(ExamSession session) {
+        ExamDefinition definition = session.getExamDefinition();
+
+        return new ExamSessionSummaryView(
+                session.getId(),
+                definition.getCode(),
+                definition.getTitle(),
+                definition.getProvider(),
+                definition.getLevel(),
+                session.getDefinitionVersion(),
+                session.getStatus(),
+                session.getCreatedAt(),
+                session.getStartedAt(),
+                session.getExpiresAt(),
+                session.getSubmittedAt()
+        );
+    }
 }

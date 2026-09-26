@@ -6,6 +6,8 @@ import com.easyprufung.backend.exam.mapper.ExamViewMapper;
 import com.easyprufung.backend.exam.repository.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.util.UUID;
 
@@ -29,5 +31,13 @@ public class ExamQueryService {
     public ExamResultView getResult(UUID sessionId) {
         return mapper.toView(results.findByExamSessionId(sessionId)
                 .orElseThrow(() -> new ResourceNotFoundException("Exam result not found: " + sessionId)));
+    }
+
+    public Page<ExamSessionSummaryView> getUserSessions(
+            String userId,
+            Pageable pageable
+    ) {
+        return sessions.findByUserId(userId, pageable)
+                .map(mapper::toSummary);
     }
 }
