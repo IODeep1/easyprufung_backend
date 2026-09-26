@@ -27,7 +27,7 @@ public class ExamViewMapper {
                     SectionDefinition section = part.getSectionDefinition();
                     var questions = e.getQuestions().stream()
                             .sorted(Comparator.comparingInt(QuestionInstance::getOrderIndex))
-                            .map(q -> new QuestionView(q.getId(), q.getExternalNumber(), q.getPrompt(),
+                            .map(q -> new QuestionView(q.getId(), q.getExternalNumber(),q.getStimulus(), q.getPrompt(),
                                     q.getQuestionType(), json.read(q.getOptionsJson(), OPTIONS), q.getMaximumScore()))
                             .collect(Collectors.toList());
                     return new ExerciseView(e.getId(), section.getSectionKey(), section.getTitle(),

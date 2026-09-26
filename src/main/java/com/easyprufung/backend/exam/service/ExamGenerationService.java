@@ -109,6 +109,7 @@ public class ExamGenerationService {
             QuestionInstance copy = new QuestionInstance();
             copy.setOrderIndex(order++);
             copy.setExternalNumber(question.getExternalNumber());
+            copy.setStimulus(question.getStimulus());
             copy.setPrompt(question.getPrompt());
             copy.setQuestionType(question.getQuestionType());
             copy.setOptionsJson(question.getOptionsJson());
@@ -136,6 +137,7 @@ public class ExamGenerationService {
             QuestionInstance question = new QuestionInstance();
             question.setOrderIndex(order++);
             question.setExternalNumber(q.getNumber());
+            question.setStimulus(q.getStimulus());
             question.setPrompt(q.getPrompt());
             question.setQuestionType(q.getType());
             question.setOptionsJson(json.write(q.getOptions()));

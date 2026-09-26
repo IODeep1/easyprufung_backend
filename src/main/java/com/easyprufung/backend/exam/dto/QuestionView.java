@@ -12,6 +12,7 @@ import java.util.UUID;
 public class QuestionView {
     private UUID id;
     private String number;
+    private String stimulus;
     private String prompt;
     private QuestionType type;
     private List<OptionDto> options;

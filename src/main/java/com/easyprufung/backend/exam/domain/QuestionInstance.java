@@ -19,6 +19,8 @@ public class QuestionInstance extends BaseEntity {
     private int orderIndex;
     @Column(name = "external_number", nullable = false, length = 20)
     private String externalNumber;
+    @Lob
+    private String stimulus;
     @Lob @Column(nullable = false)
     private String prompt;
     @Enumerated(EnumType.STRING) @Column(nullable = false, length = 30)

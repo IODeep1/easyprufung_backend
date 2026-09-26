@@ -65,6 +65,7 @@ public class ExerciseTemplateService {
             QuestionTemplate entity = new QuestionTemplate();
             entity.setOrderIndex(order++);
             entity.setExternalNumber(q.getNumber());
+            entity.setStimulus(q.getStimulus());
             entity.setPrompt(q.getPrompt());
             entity.setQuestionType(q.getType());
             entity.setOptionsJson(json.write(q.getOptions()));

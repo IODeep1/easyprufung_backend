@@ -23,6 +23,7 @@ public class CreateTemplateRequest {
     @Data @NoArgsConstructor @AllArgsConstructor
     public static class TemplateQuestionRequest {
         @NotBlank private String number;
+        private String stimulus;
         @NotBlank private String prompt;
         @NotNull private QuestionType type;
         @NotNull private List<@Valid OptionDto> options = new ArrayList<>();

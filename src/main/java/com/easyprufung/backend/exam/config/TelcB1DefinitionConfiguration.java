@@ -34,7 +34,7 @@ public class TelcB1DefinitionConfiguration implements ApplicationRunner {
         SectionDefinition reading = section("LESEVERSTEHEN", "Leseverstehen", 1, 5400, "LESEN_SPRACHE_90");
         reading.addPart(part("LESEN_1", "Teil 1", 1, ContentSource.AI_GENERATED, EvaluationMode.OBJECTIVE,
                 QuestionType.MATCHING, 1, 5, "5", "25",
-                "Create five short authentic B1 texts and ten headings (a-j). Exactly one heading matches each text; distractors must be plausible."));
+                "Create exactly five independent B1 reading texts and ten shared headings labelled a-j. For every question 1-5, put its complete corresponding reading text in the question's stimulus field. Use prompt only for the question instruction. Include the same ten heading options a-j in every question. Exactly one heading must match each text, and headings may only be used once. Set the exercise-level content to null."));
         reading.addPart(part("LESEN_2", "Teil 2", 2, ContentSource.AI_GENERATED, EvaluationMode.OBJECTIVE,
                 QuestionType.SINGLE_CHOICE, 6, 5, "5", "25",
                 "Create one B1 informational text and five detail-comprehension questions numbered 6-10, each with options a, b and c."));
