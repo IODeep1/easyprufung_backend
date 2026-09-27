@@ -1,7 +1,6 @@
 package com.easyprufung.backend.User;
 
 
-import com.easyprufung.backend.Project.Project;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Data;
 import org.hibernate.annotations.GenericGenerator;
@@ -64,14 +63,5 @@ public class User {
 
     public void addSubscription(Subscription subscription){
         this.subscriptions.add(subscription);
-    }
-
-
-    @OneToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL, orphanRemoval = true)
-    @JoinTable(name = "user_projects", joinColumns = @JoinColumn(name = "user_id"),inverseJoinColumns = @JoinColumn(name = "project_id"))
-    private Set<Project> projects = new HashSet<>();
-
-    public void addProject(Project project){
-        this.projects.add(project);
     }
 }

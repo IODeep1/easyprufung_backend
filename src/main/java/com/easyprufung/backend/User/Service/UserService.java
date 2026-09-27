@@ -88,7 +88,6 @@ public class UserService {
             }
 
             User user = usersRepository.save(savedUser);
-            user.setProjects(new HashSet<>());
             return getUserDTO(user);
         }
         else {
@@ -99,7 +98,6 @@ public class UserService {
 
     public User updateUser(User user) {
         User savedUser = usersRepository.save(user);
-        savedUser.setProjects(new HashSet<>());
         return savedUser;
     }
     public UserDTO getUserProjects(String email) {

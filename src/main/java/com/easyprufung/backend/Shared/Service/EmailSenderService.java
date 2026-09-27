@@ -41,7 +41,8 @@ public class EmailSenderService {
             message.setTo(mail.getTo());
             message.setText(geContentFromTemplate(mail.getModel(), template),true);
             message.setSubject(mail.getSubject());
-            mailSender.send(message.getMimeMessage());
+            //TODO uncomment this in prod
+            //mailSender.send(message.getMimeMessage());
         } catch (MessagingException e) {
             logger.error(e.getMessage());
            

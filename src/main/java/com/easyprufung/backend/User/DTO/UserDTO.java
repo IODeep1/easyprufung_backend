@@ -1,6 +1,5 @@
 package com.easyprufung.backend.User.DTO;
 
-import com.easyprufung.backend.Project.Project;
 import com.easyprufung.backend.User.Subscription;
 import lombok.Data;
 
@@ -21,7 +20,6 @@ public class UserDTO {
     private Timestamp resetPasswordTokenCreationDate;
     private String source;
     private List<Subscription> subscriptions;
-    private List<Project> projects;
     private Timestamp createdDate;
     private Timestamp updatedDate;
 }

@@ -1,0 +1,160 @@
+{
+  "templateKey": "telc-b1-hoeren-teil-2-set-001",
+  "instructions": "Sie hören nun ein Gespräch. Sie hören das Gespräch zweimal. Entscheiden Sie, ob die Aussagen 46–55 richtig oder falsch sind.",
+  "content": "Gespräch mit der Leiterin eines Nachbarschaftszentrums über Angebote, Öffnungszeiten und ehrenamtliche Mitarbeit.",
+  "audioUrl": "https://cdn.example.com/exams/telc-b1/hoeren-teil-2-set-001.mp3",
+  "audioContentType": "audio/mpeg",
+  "audioPlayLimit": 2,
+  "questions": [
+    {
+      "number": "46",
+      "prompt": "Das Nachbarschaftszentrum organisiert im nächsten Monat ein großes Sommerfest.",
+      "type": "TRUE_FALSE",
+      "options": [
+        {"key": "+", "text": "richtig"},
+        {"key": "-", "text": "falsch"}
+      ],
+      "correctAnswer": {
+        "acceptedOptionKeys": ["+"],
+        "acceptedTexts": []
+      },
+      "maximumScore": 2.5,
+      "explanation": "Im Gespräch wird angekündigt, dass das Sommerfest im nächsten Monat stattfindet."
+    },
+    {
+      "number": "47",
+      "prompt": "Das Gespräch wird mit der Leiterin des Nachbarschaftszentrums geführt.",
+      "type": "TRUE_FALSE",
+      "options": [
+        {"key": "+", "text": "richtig"},
+        {"key": "-", "text": "falsch"}
+      ],
+      "correctAnswer": {
+        "acceptedOptionKeys": ["+"],
+        "acceptedTexts": []
+      },
+      "maximumScore": 2.5,
+      "explanation": "Die Gesprächspartnerin stellt sich als Leiterin des Zentrums vor."
+    },
+    {
+      "number": "48",
+      "prompt": "Das Nachbarschaftszentrum wurde erst in diesem Jahr eröffnet.",
+      "type": "TRUE_FALSE",
+      "options": [
+        {"key": "+", "text": "richtig"},
+        {"key": "-", "text": "falsch"}
+      ],
+      "correctAnswer": {
+        "acceptedOptionKeys": ["-"],
+        "acceptedTexts": []
+      },
+      "maximumScore": 2.5,
+      "explanation": "Das Zentrum besteht bereits seit mehreren Jahren."
+    },
+    {
+      "number": "49",
+      "prompt": "Im Zentrum arbeiten ausschließlich fest angestellte Mitarbeiterinnen und Mitarbeiter.",
+      "type": "TRUE_FALSE",
+      "options": [
+        {"key": "+", "text": "richtig"},
+        {"key": "-", "text": "falsch"}
+      ],
+      "correctAnswer": {
+        "acceptedOptionKeys": ["-"],
+        "acceptedTexts": []
+      },
+      "maximumScore": 2.5,
+      "explanation": "Ein Teil der Arbeit wird von ehrenamtlichen Helferinnen und Helfern übernommen."
+    },
+    {
+      "number": "50",
+      "prompt": "Jugendliche können einige Angebote kostenlos nutzen.",
+      "type": "TRUE_FALSE",
+      "options": [
+        {"key": "+", "text": "richtig"},
+        {"key": "-", "text": "falsch"}
+      ],
+      "correctAnswer": {
+        "acceptedOptionKeys": ["+"],
+        "acceptedTexts": []
+      },
+      "maximumScore": 2.5,
+      "explanation": "Für Jugendliche werden ausdrücklich kostenlose Angebote erwähnt."
+    },
+    {
+      "number": "51",
+      "prompt": "Der Computerkurs findet jeden Montag statt.",
+      "type": "TRUE_FALSE",
+      "options": [
+        {"key": "+", "text": "richtig"},
+        {"key": "-", "text": "falsch"}
+      ],
+      "correctAnswer": {
+        "acceptedOptionKeys": ["-"],
+        "acceptedTexts": []
+      },
+      "maximumScore": 2.5,
+      "explanation": "Der Computerkurs findet laut Gespräch mittwochs statt."
+    },
+    {
+      "number": "52",
+      "prompt": "Für den Sprachkurs muss man sich vorher anmelden.",
+      "type": "TRUE_FALSE",
+      "options": [
+        {"key": "+", "text": "richtig"},
+        {"key": "-", "text": "falsch"}
+      ],
+      "correctAnswer": {
+        "acceptedOptionKeys": ["+"],
+        "acceptedTexts": []
+      },
+      "maximumScore": 2.5,
+      "explanation": "Wegen der begrenzten Teilnehmerzahl ist eine Anmeldung erforderlich."
+    },
+    {
+      "number": "53",
+      "prompt": "Das Zentrum ist auch sonntags geöffnet.",
+      "type": "TRUE_FALSE",
+      "options": [
+        {"key": "+", "text": "richtig"},
+        {"key": "-", "text": "falsch"}
+      ],
+      "correctAnswer": {
+        "acceptedOptionKeys": ["-"],
+        "acceptedTexts": []
+      },
+      "maximumScore": 2.5,
+      "explanation": "Das Zentrum bleibt sonntags geschlossen."
+    },
+    {
+      "number": "54",
+      "prompt": "Besucher können im Zentrum gemeinsam kochen.",
+      "type": "TRUE_FALSE",
+      "options": [
+        {"key": "+", "text": "richtig"},
+        {"key": "-", "text": "falsch"}
+      ],
+      "correctAnswer": {
+        "acceptedOptionKeys": ["+"],
+        "acceptedTexts": []
+      },
+      "maximumScore": 2.5,
+      "explanation": "Die Leiterin nennt einen regelmäßigen gemeinsamen Kochabend."
+    },
+    {
+      "number": "55",
+      "prompt": "Neue ehrenamtliche Helfer werden zurzeit nicht gesucht.",
+      "type": "TRUE_FALSE",
+      "options": [
+        {"key": "+", "text": "richtig"},
+        {"key": "-", "text": "falsch"}
+      ],
+      "correctAnswer": {
+        "acceptedOptionKeys": ["-"],
+        "acceptedTexts": []
+      },
+      "maximumScore": 2.5,
+      "explanation": "Das Zentrum sucht ausdrücklich weitere ehrenamtliche Helfer."
+    }
+  ]
+}

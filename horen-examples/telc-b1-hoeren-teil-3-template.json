@@ -1,0 +1,85 @@
+{
+  "templateKey": "telc-b1-hoeren-teil-3-set-001",
+  "instructions": "Sie hören nun fünf kurze Texte. Sie hören jeden Text zweimal. Entscheiden Sie, ob die Aussagen 56–60 richtig oder falsch sind.",
+  "content": "Fünf kurze Durchsagen und Mitteilungen aus typischen Alltagssituationen.",
+  "audioUrl": "https://cdn.example.com/exams/telc-b1/hoeren-teil-3-set-001.mp3",
+  "audioContentType": "audio/mpeg",
+  "audioPlayLimit": 2,
+  "questions": [
+    {
+      "number": "56",
+      "prompt": "Der Zug nach Hamburg fährt heute von Gleis 7 ab.",
+      "type": "TRUE_FALSE",
+      "options": [
+        {"key": "+", "text": "richtig"},
+        {"key": "-", "text": "falsch"}
+      ],
+      "correctAnswer": {
+        "acceptedOptionKeys": ["+"],
+        "acceptedTexts": []
+      },
+      "maximumScore": 5,
+      "explanation": "In der Bahnhofsdurchsage wird Gleis 7 genannt."
+    },
+    {
+      "number": "57",
+      "prompt": "Die Arztpraxis ist am Freitagnachmittag geöffnet.",
+      "type": "TRUE_FALSE",
+      "options": [
+        {"key": "+", "text": "richtig"},
+        {"key": "-", "text": "falsch"}
+      ],
+      "correctAnswer": {
+        "acceptedOptionKeys": ["-"],
+        "acceptedTexts": []
+      },
+      "maximumScore": 5,
+      "explanation": "Die telefonische Mitteilung sagt, dass die Praxis am Freitagnachmittag geschlossen bleibt."
+    },
+    {
+      "number": "58",
+      "prompt": "Am Nachmittag soll das Wetter besser werden.",
+      "type": "TRUE_FALSE",
+      "options": [
+        {"key": "+", "text": "richtig"},
+        {"key": "-", "text": "falsch"}
+      ],
+      "correctAnswer": {
+        "acceptedOptionKeys": ["+"],
+        "acceptedTexts": []
+      },
+      "maximumScore": 5,
+      "explanation": "Der Wetterbericht kündigt für den Nachmittag weniger Regen und mehr Sonne an."
+    },
+    {
+      "number": "59",
+      "prompt": "Das Stadtmuseum ist wegen Renovierungsarbeiten die ganze Woche geschlossen.",
+      "type": "TRUE_FALSE",
+      "options": [
+        {"key": "+", "text": "richtig"},
+        {"key": "-", "text": "falsch"}
+      ],
+      "correctAnswer": {
+        "acceptedOptionKeys": ["-"],
+        "acceptedTexts": []
+      },
+      "maximumScore": 5,
+      "explanation": "Das Museum ist nur am Montag geschlossen und öffnet am Dienstag wieder."
+    },
+    {
+      "number": "60",
+      "prompt": "Kundinnen und Kunden erhalten heute zwanzig Prozent Rabatt auf alle Jacken.",
+      "type": "TRUE_FALSE",
+      "options": [
+        {"key": "+", "text": "richtig"},
+        {"key": "-", "text": "falsch"}
+      ],
+      "correctAnswer": {
+        "acceptedOptionKeys": ["+"],
+        "acceptedTexts": []
+      },
+      "maximumScore": 5,
+      "explanation": "Die Geschäftsdurchsage nennt einen Rabatt von zwanzig Prozent auf alle Jacken."
+    }
+  ]
+}

@@ -5,7 +5,6 @@ import com.easyprufung.backend.Admin.Admin;
 import com.easyprufung.backend.Admin.Repository.AdminsRepository;
 import com.easyprufung.backend.Admin.Repository.RolesRepository;
 import com.easyprufung.backend.Admin.Role;
-import com.easyprufung.backend.Project.Utility.TerminalCommandService;
 import com.easyprufung.backend.PromoCode.PromoCode;
 import com.easyprufung.backend.PromoCode.Service.PromoCodeService;
 import com.easyprufung.backend.Security.AESEncryption;
