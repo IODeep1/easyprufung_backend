@@ -6,10 +6,120 @@
   "audioContentType": "audio/mpeg",
   "audioPlayLimit": 1,
   "questions": [
-    {"number":"41","prompt":"Aussage für Aufgabe 41","type":"TRUE_FALSE","options":[{"key":"+","text":"richtig"},{"key":"-","text":"falsch"}],"correctAnswer":{"acceptedOptionKeys":["+"],"acceptedTexts":[]},"maximumScore":5,"explanation":"Begründung für die Lösung."},
-    {"number":"42","prompt":"Aussage für Aufgabe 42","type":"TRUE_FALSE","options":[{"key":"+","text":"richtig"},{"key":"-","text":"falsch"}],"correctAnswer":{"acceptedOptionKeys":["-"],"acceptedTexts":[]},"maximumScore":5,"explanation":"Begründung für die Lösung."},
-    {"number":"43","prompt":"Aussage für Aufgabe 43","type":"TRUE_FALSE","options":[{"key":"+","text":"richtig"},{"key":"-","text":"falsch"}],"correctAnswer":{"acceptedOptionKeys":["+"],"acceptedTexts":[]},"maximumScore":5,"explanation":"Begründung für die Lösung."},
-    {"number":"44","prompt":"Aussage für Aufgabe 44","type":"TRUE_FALSE","options":[{"key":"+","text":"richtig"},{"key":"-","text":"falsch"}],"correctAnswer":{"acceptedOptionKeys":["-"],"acceptedTexts":[]},"maximumScore":5,"explanation":"Begründung für die Lösung."},
-    {"number":"45","prompt":"Aussage für Aufgabe 45","type":"TRUE_FALSE","options":[{"key":"+","text":"richtig"},{"key":"-","text":"falsch"}],"correctAnswer":{"acceptedOptionKeys":["+"],"acceptedTexts":[]},"maximumScore":5,"explanation":"Begründung für die Lösung."}
+    {
+      "number": "41",
+      "prompt": "Aussage für Aufgabe 41",
+      "type": "TRUE_FALSE",
+      "options": [
+        {
+          "key": "+",
+          "text": "richtig"
+        },
+        {
+          "key": "-",
+          "text": "falsch"
+        }
+      ],
+      "correctAnswer": {
+        "acceptedOptionKeys": [
+          "+"
+        ],
+        "acceptedTexts": []
+      },
+      "maximumScore": 5,
+      "explanation": "Begründung für die Lösung."
+    },
+    {
+      "number": "42",
+      "prompt": "Aussage für Aufgabe 42",
+      "type": "TRUE_FALSE",
+      "options": [
+        {
+          "key": "+",
+          "text": "richtig"
+        },
+        {
+          "key": "-",
+          "text": "falsch"
+        }
+      ],
+      "correctAnswer": {
+        "acceptedOptionKeys": [
+          "-"
+        ],
+        "acceptedTexts": []
+      },
+      "maximumScore": 5,
+      "explanation": "Begründung für die Lösung."
+    },
+    {
+      "number": "43",
+      "prompt": "Aussage für Aufgabe 43",
+      "type": "TRUE_FALSE",
+      "options": [
+        {
+          "key": "+",
+          "text": "richtig"
+        },
+        {
+          "key": "-",
+          "text": "falsch"
+        }
+      ],
+      "correctAnswer": {
+        "acceptedOptionKeys": [
+          "+"
+        ],
+        "acceptedTexts": []
+      },
+      "maximumScore": 5,
+      "explanation": "Begründung für die Lösung."
+    },
+    {
+      "number": "44",
+      "prompt": "Aussage für Aufgabe 44",
+      "type": "TRUE_FALSE",
+      "options": [
+        {
+          "key": "+",
+          "text": "richtig"
+        },
+        {
+          "key": "-",
+          "text": "falsch"
+        }
+      ],
+      "correctAnswer": {
+        "acceptedOptionKeys": [
+          "-"
+        ],
+        "acceptedTexts": []
+      },
+      "maximumScore": 5,
+      "explanation": "Begründung für die Lösung."
+    },
+    {
+      "number": "45",
+      "prompt": "Aussage für Aufgabe 45",
+      "type": "TRUE_FALSE",
+      "options": [
+        {
+          "key": "+",
+          "text": "richtig"
+        },
+        {
+          "key": "-",
+          "text": "falsch"
+        }
+      ],
+      "correctAnswer": {
+        "acceptedOptionKeys": [
+          "+"
+        ],
+        "acceptedTexts": []
+      },
+      "maximumScore": 5,
+      "explanation": "Begründung für die Lösung."
+    }
   ]
 }

@@ -7,6 +7,7 @@ projects
 resources/logo/*
 logs
 build/
+horen-examples/
 src/main/java/com/easyprufung/backend/AI/OpenAIRestConfig.java
 # Ignore Spring Boot resources
 src/main/resources/
