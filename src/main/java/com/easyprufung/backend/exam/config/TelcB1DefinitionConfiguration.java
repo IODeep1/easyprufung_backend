@@ -47,7 +47,7 @@ public class TelcB1DefinitionConfiguration implements ApplicationRunner {
         exam.setTitle(
                 "telc Deutsch B1 — Schriftliche Prüfung"
         );
-        exam.setDefinitionVersion(DEFINITION_VERSION);
+        exam.setDefinitionVersion(1);
         exam.setActive(true);
         exam.setMaximumScore(bd("225"));
         exam.setPassPercentage(bd("60"));
