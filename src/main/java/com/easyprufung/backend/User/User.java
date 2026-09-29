@@ -7,8 +7,6 @@ import org.hibernate.annotations.GenericGenerator;
 
 import javax.persistence.*;
 import java.sql.Timestamp;
-import java.util.HashSet;
-import java.util.Set;
 
 @Entity
 @Table(name = "users")
@@ -57,11 +55,17 @@ public class User {
     @Column(name = "updated_date")
     private Timestamp updatedDate;
 
-    @OneToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL, orphanRemoval = true)
-    @JoinTable(name = "user_subscriptions", joinColumns = @JoinColumn(name = "user_id"),inverseJoinColumns = @JoinColumn(name = "subscription_id"))
-    private Set<Subscription> subscriptions = new HashSet<>();
-
-    public void addSubscription(Subscription subscription){
-        this.subscriptions.add(subscription);
-    }
+    /*
+     * A user now has exactly one access/subscription record.
+     * Keeping the existing join table avoids introducing a new subscription_id
+     * column on users. Existing databases must be cleaned so each user has at
+     * most one row in user_subscriptions before enabling this mapping.
+     */
+    @OneToOne(fetch = FetchType.EAGER, cascade = CascadeType.ALL, orphanRemoval = true)
+    @JoinTable(
+            name = "user_subscriptions",
+            joinColumns = @JoinColumn(name = "user_id", unique = true),
+            inverseJoinColumns = @JoinColumn(name = "subscription_id", unique = true)
+    )
+    private Subscription subscription;
 }

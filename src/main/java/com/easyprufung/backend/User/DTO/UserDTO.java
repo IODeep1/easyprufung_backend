@@ -4,7 +4,6 @@ import com.easyprufung.backend.User.Subscription;
 import lombok.Data;
 
 import java.sql.Timestamp;
-import java.util.List;
 
 @Data
 public class UserDTO {
@@ -19,7 +18,7 @@ public class UserDTO {
     private String resetPasswordToken;
     private Timestamp resetPasswordTokenCreationDate;
     private String source;
-    private List<Subscription> subscriptions;
+    private Subscription subscription;
     private Timestamp createdDate;
     private Timestamp updatedDate;
 }

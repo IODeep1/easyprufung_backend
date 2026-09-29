@@ -6,10 +6,6 @@ import com.easyprufung.backend.User.Service.SubscriptionService;
 import com.easyprufung.backend.User.Service.UserService;
 import com.easyprufung.backend.User.Subscription;
 import com.easyprufung.backend.User.User;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectWriter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -21,7 +17,6 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
-
 @Slf4j
 @RepositoryRestController
 @RequestMapping
@@ -30,29 +25,42 @@ public class SubscriptionController {
     private final SubscriptionService subscriptionService;
     private final UserService userService;
 
-
+    /**
+     * Admin helper kept for backwards compatibility with the existing endpoint.
+     * It now grants the single TELC B1 paid product instead of arbitrary plans.
+     */
     @PreAuthorize("hasAnyRole('ROLE_ADMIN')")
     @PostMapping(path = EndPoints.SUBSCRIPTION_CREATE)
-    public ResponseEntity<?> createSubscription(@RequestBody SubscriptionDTO subscriptionDTO, @RequestHeader("Authorization") String authorizationHeader) {
-        try
-        {
+    public ResponseEntity<?> createSubscription(
+            @RequestBody SubscriptionDTO subscriptionDTO,
+            @RequestHeader("Authorization") String authorizationHeader
+    ) {
+        try {
             User user = userService.getUserByEmail(subscriptionDTO.getCustomerEmail());
-            if(user != null)
-            {
-                if(user.getSubscriptions().stream().count() == 0)
-                {
-                    Subscription newSubscription = subscriptionService.createSubscription(user.getUuid(), subscriptionDTO.getCustomerId(),subscriptionDTO.getCustomerEmail(),subscriptionDTO.getPlan(),subscriptionDTO.getType(),subscriptionDTO.getPriceId());
-                    user.addSubscription(newSubscription);
-                    userService.updateUser(user);
-                }
-                else {
-                    var storedSubscription = user.getSubscriptions().stream().findFirst().get();
-                    subscriptionService.updateSubscription(storedSubscription, subscriptionDTO.getCustomerId(),subscriptionDTO.getPlan(),subscriptionDTO.getType(),subscriptionDTO.getPriceId());
-                }
+            if (user == null) {
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND, "USER_NOT_FOUND");
             }
+
+            Subscription subscription = user.getSubscription();
+            if (subscription == null) {
+                subscription = subscriptionService.createB1PaidSubscription(
+                        subscriptionDTO.getCustomerId(),
+                        subscriptionDTO.getCustomerEmail(),
+                        subscriptionDTO.getPriceId()
+                );
+                user.setSubscription(subscription);
+                userService.updateUser(user);
+            } else {
+                subscriptionService.activateB1PaidSubscription(
+                        subscription,
+                        subscriptionDTO.getCustomerId(),
+                        subscriptionDTO.getCustomerEmail(),
+                        subscriptionDTO.getPriceId()
+                );
+            }
+
             return ResponseEntity.ok("success");
-        }
-        catch (RuntimeException exc) {
+        } catch (RuntimeException exc) {
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST, exc.getMessage());
         }
@@ -61,12 +69,10 @@ public class SubscriptionController {
     @PreAuthorize("hasAnyRole('ROLE_ADMIN')")
     @GetMapping(path = EndPoints.SUBSCRIPTION_LIST)
     public ResponseEntity<?> getSubscriptionList(Pageable pageable) {
-        try
-        {
+        try {
             Page<Subscription> events = subscriptionService.getSubscriptions(pageable);
             return ResponseEntity.ok(events.getContent());
-        }
-        catch (RuntimeException exc) {
+        } catch (RuntimeException exc) {
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST, exc.getMessage());
         }

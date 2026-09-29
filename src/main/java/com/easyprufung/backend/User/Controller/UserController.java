@@ -31,7 +31,6 @@ import javax.servlet.http.HttpServletRequest;
 import java.nio.charset.StandardCharsets;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
-import java.util.HashSet;
 
 @Slf4j
 @RepositoryRestController
@@ -76,8 +75,7 @@ public class UserController {
                 catch (Exception e) {}
                 user = userService.createUser(userDTO, ipAddress);
                 Subscription newSubscription = subscriptionService.createFreeSubscription(email);
-                user.setSubscriptions(new HashSet<>());
-                user.addSubscription(newSubscription);
+                user.setSubscription(newSubscription);
                 user = userService.updateUser(user);
             }
             else  {
@@ -145,8 +143,7 @@ public class UserController {
             catch (Exception e) {}
             User newUser = userService.createUser(userDTO, ipAddress);
             Subscription newSubscription = subscriptionService.createFreeSubscription(userDTO.getEmail());
-            newUser.setSubscriptions(new HashSet<>());
-            newUser.addSubscription(newSubscription);
+            newUser.setSubscription(newSubscription);
             newUser = userService.updateUser(newUser);
             if(newUser != null){
                 String token = JwtUtils.getJWTToken(newUser.getEmail(), RoleTags.UserRole);

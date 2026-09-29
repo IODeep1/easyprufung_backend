@@ -1,9 +1,12 @@
 package com.easyprufung.backend.Stripe;
+
 import com.easyprufung.backend.User.Service.SubscriptionService;
 import com.easyprufung.backend.User.Service.UserService;
+import com.easyprufung.backend.User.Subscription;
 import com.easyprufung.backend.User.User;
 import com.stripe.Stripe;
-import com.stripe.model.*;
+import com.stripe.model.Customer;
+import com.stripe.model.Event;
 import com.stripe.model.checkout.Session;
 import com.stripe.net.ApiResource;
 import com.stripe.net.Webhook;
@@ -23,131 +26,117 @@ import javax.servlet.http.HttpServletRequest;
 
 @RestController
 @RequiredArgsConstructor
-
 public class WebhookController {
     private static final Logger logger = LoggerFactory.getLogger(WebhookController.class);
 
     @Autowired
     UserService userService;
+
     @Autowired
     SubscriptionService subscriptionService;
+
     @Autowired
     private Environment env;
 
     @PostMapping("/public/stripe/webhook")
     public ResponseEntity<String> handleWebhook(@RequestBody String payload, HttpServletRequest request) {
-        String api_secret = env.getProperty("easyprufung.stripe.apisecret");
+        String apiSecret = env.getProperty("easyprufung.stripe.apisecret");
         String webHookSecret = env.getProperty("easyprufung.stripe.webhooksecret");
-        String priceIdStarter = env.getProperty("easyprufung.stripe.priceidstarter");
-        String priceIdAutopilot = env.getProperty("easyprufung.stripe.priceidautopilot");
-        String creditIdStarter = env.getProperty("easyprufung.stripe.creditidstarter");
-        String creditIdBuilder = env.getProperty("easyprufung.stripe.creditidbuilder");
-        String creditIdPro = env.getProperty("easyprufung.stripe.creditidpro");
+        String priceIdB1 = env.getProperty("easyprufung.stripe.priceidb1");
 
-        String customerId = "";
-        String customerEmail = "";
         try {
-            Stripe.apiKey = api_secret;
-            Event event = Webhook.constructEvent(payload, request.getHeader("Stripe-Signature"), webHookSecret);
-            try {
-                // Handle the event
-                switch (event.getType()) {
-                    case "checkout.session.completed":
-                        // Retrieve the session ID from the event data
-                        String json = event.getDataObjectDeserializer().getRawJson();
-                        Session preSession = ApiResource.GSON.fromJson(json, Session.class);
-                        String sessionId = preSession.getId();
+            Stripe.apiKey = apiSecret;
+            Event event = Webhook.constructEvent(
+                    payload,
+                    request.getHeader("Stripe-Signature"),
+                    webHookSecret
+            );
 
-                        // Retrieve the session details including line items
-                        SessionRetrieveParams params = SessionRetrieveParams.builder()
-                                .addExpand("line_items")
-                                .build();
-                        Session session = Session.retrieve(sessionId, params, null);
-
-                        String clientReferenceId = session.getClientReferenceId();
-
-                        // Retrieve the customer ID from the session
-                        customerId = session.getCustomer();
-                        if(customerId != null) {
-                            // Retrieve the customer object
-                            Customer customer = Customer.retrieve(customerId);
-                            customerEmail = customer.getEmail();
-                        }
-                        else {
-                            var csutomrtDetails= session.getCustomerDetails();
-                            customerEmail = csutomrtDetails.getEmail();
-                        }
-
-                        // Retrieve the price ID from the session's line items
-                        String priceId = session.getLineItems().getData().get(0).getPrice().getId();
-
-                        User user = userService.getUserByUUID(clientReferenceId);
-                        if(user != null)
-                        {
-                            String plan = "free";
-                            String type = "monthly";
-                            if(priceId.equals(priceIdStarter) || priceId.equals(priceIdAutopilot)) {
-                                plan = "starter";
-                                if(priceId.equals(priceIdAutopilot)){
-                                    plan = "autopilot";
-                                    type = "lifetime";
-                                }
-                                if(user.getSubscriptions().stream().count() == 0)
-                                {
-                                    com.easyprufung.backend.User.Subscription newSubscription = subscriptionService.createSubscription(user.getUuid(), customerId,customerEmail,plan, type,priceId);
-                                    user.addSubscription(newSubscription);
-                                    userService.updateUser(user);
-                                    userService.sendNewSubscriptionEmail(user);
-                                }
-                                else {
-                                    var storedSubscription = user.getSubscriptions().stream().findFirst().get();
-                                    subscriptionService.updateSubscription(storedSubscription,customerId,plan, type,priceId);
-                                }
-                                break;
-                            }
-                            var storedSubscription = user.getSubscriptions().stream().findFirst().get();
-                            var currentIteration = storedSubscription.getIteration();
-                            if(priceId.equals(creditIdStarter)){
-                                currentIteration += 50;
-                            }
-                            else if(priceId.equals(creditIdBuilder)){
-                                currentIteration += 100;
-                            }
-                            else if(priceId.equals(creditIdPro)){
-                                currentIteration += 200;
-                            }
-                            storedSubscription.setIteration(currentIteration);
-                            subscriptionService.updateSubscription(storedSubscription);
-                            break;
-                        }
-                        break;
-
-                    case "customer.subscription.deleted":
-                        String jsonResult = event.getDataObjectDeserializer().getRawJson();
-                        Session sessionResult = ApiResource.GSON.fromJson(jsonResult, Session.class);
-                        String subscriptionId = sessionResult.getId();
-                        Subscription subscription = Subscription.retrieve(
-                                subscriptionId
-                        );
-                        customerId= subscription.getCustomer();
-                        com.easyprufung.backend.User.Subscription storedSubscription = subscriptionService.findSubscriptionByCustomerId(customerId);
-                        if(storedSubscription != null)
-                        {
-                            subscriptionService.cancelSubscription(storedSubscription);
-                        }
-                        break;
-                    default:
-                }
-                return ResponseEntity.ok("Webhook handled: " + event.getType());
-            }
-            catch (Exception e) {
-                logger.error("Event data" + event.getData().getObject().toString() + "Error" +e.getMessage() );
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Webhook error: " + e.getMessage());
+            switch (event.getType()) {
+                case "checkout.session.completed":
+                case "checkout.session.async_payment_succeeded":
+                    processSuccessfulCheckout(event, priceIdB1);
+                    break;
+                default:
+                    // No recurring subscription events are needed anymore.
+                    break;
             }
 
+            return ResponseEntity.ok("Webhook handled: " + event.getType());
         } catch (Exception e) {
-            logger.error(e.getMessage());
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Webhook error: " + e.getMessage());
+            logger.error("Stripe webhook error", e);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("Webhook error: " + e.getMessage());
         }
+    }
+
+    private void processSuccessfulCheckout(Event event, String priceIdB1) throws Exception {
+        String json = event.getDataObjectDeserializer().getRawJson();
+        Session eventSession = ApiResource.GSON.fromJson(json, Session.class);
+
+        SessionRetrieveParams params = SessionRetrieveParams.builder()
+                .addExpand("line_items")
+                .build();
+        Session session = Session.retrieve(eventSession.getId(), params, null);
+
+        // checkout.session.completed can be emitted before delayed payment methods settle.
+        // Only grant access once Stripe reports the payment as paid.
+        if (!"paid".equalsIgnoreCase(session.getPaymentStatus())) {
+            logger.info("Ignoring unpaid Checkout Session {}", session.getId());
+            return;
+        }
+
+        if (session.getLineItems() == null || session.getLineItems().getData().isEmpty()) {
+            throw new IllegalStateException("Stripe Checkout Session contains no line items");
+        }
+
+        String paidPriceId = session.getLineItems().getData().get(0).getPrice().getId();
+        if (priceIdB1 == null || !priceIdB1.equals(paidPriceId)) {
+            logger.info("Ignoring Checkout Session {} for unrelated price {}", session.getId(), paidPriceId);
+            return;
+        }
+
+        String clientReferenceId = session.getClientReferenceId();
+        if (clientReferenceId == null || clientReferenceId.isEmpty()) {
+            throw new IllegalStateException("Stripe client_reference_id is missing");
+        }
+
+        User user = userService.getUserByUUID(clientReferenceId);
+        if (user == null) {
+            throw new IllegalStateException("User not found for client_reference_id " + clientReferenceId);
+        }
+
+        String customerId = session.getCustomer();
+        String customerEmail = user.getEmail();
+
+        if (customerId != null) {
+            Customer customer = Customer.retrieve(customerId);
+            if (customer.getEmail() != null && !customer.getEmail().isEmpty()) {
+                customerEmail = customer.getEmail();
+            }
+        } else if (session.getCustomerDetails() != null
+                && session.getCustomerDetails().getEmail() != null) {
+            customerEmail = session.getCustomerDetails().getEmail();
+        }
+
+        Subscription subscription = user.getSubscription();
+        if (subscription == null) {
+            subscription = subscriptionService.createB1PaidSubscription(
+                    customerId,
+                    customerEmail,
+                    paidPriceId
+            );
+            user.setSubscription(subscription);
+            userService.updateUser(user);
+        } else {
+            subscriptionService.activateB1PaidSubscription(
+                    subscription,
+                    customerId,
+                    customerEmail,
+                    paidPriceId
+            );
+        }
+
+        userService.sendNewSubscriptionEmail(user);
     }
 }

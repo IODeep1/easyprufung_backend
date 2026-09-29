@@ -1,11 +1,9 @@
 package com.easyprufung.backend.User.Service;
 
-
 import com.easyprufung.backend.User.DTO.SubscriptionDTO;
 import com.easyprufung.backend.User.Repository.SubscriptionRepository;
 import com.easyprufung.backend.User.Repository.UsersRepository;
 import com.easyprufung.backend.User.Subscription;
-import com.easyprufung.backend.User.User;
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.Timestamp;
 import java.util.Calendar;
@@ -30,258 +29,208 @@ public class SubscriptionService {
     @Autowired
     SubscriptionRepository subscriptionRepository;
 
+    public static final String PLAN_FREE = "free";
+    public static final String PLAN_B1 = "b1";
+    public static final String PLAN_TESTER = "tester";
 
-    final String free = "free";
-    final String lifetime = "lifetime";
-    final String monthly = "monthly";
-    final String tester = "tester";
-    final String starter = "starter";
-    final String autopilot = "autopilot";
-    final int freeIteration = 4;
-    final int starterIteration = 50;
-    final int autopilotIteration = -1;
-    final int freeQuota = 1;
-    final int starterQuota = 3;
-    final int autopilotQuota = -1;
-    final String activeStatus = "active";
-    final String cancelledStatus = "cancelled";
-    final String cancellationRequestedStatus = "cancellation_requested";
+    public static final String TYPE_FREE = "free";
+    public static final String TYPE_ONE_TIME = "one_time";
+    public static final String TYPE_TESTER = "tester";
 
-    //Methods
-    public Subscription createSubscription(String userUUID, String customerId, String customerEmail, String plan, String type, String priceId) {
-        ModelMapper modelMapper = new ModelMapper();
-        Date date = new Date();
-        SubscriptionDTO subscriptionDTO = new SubscriptionDTO();
-        subscriptionDTO.setUuid(UUID.randomUUID().toString());
-        subscriptionDTO.setCustomerId(customerId);
-        subscriptionDTO.setCustomerEmail(customerEmail);
-        subscriptionDTO.setPlan(plan);
-        subscriptionDTO.setType(type);
-        subscriptionDTO.setPriceId(priceId);
-        subscriptionDTO.setIsActive(true);
-        subscriptionDTO.setStatus(activeStatus);
-        if(plan.equals(starter)){
-            subscriptionDTO.setIteration(starterIteration);
-            subscriptionDTO.setQuota(starterQuota);
-        }
-        else if (plan.equals(autopilot)){
-            subscriptionDTO.setIteration(autopilotIteration);
-            subscriptionDTO.setQuota(autopilotQuota);
-        }
-        else {
-            subscriptionDTO.setIteration(0);
-            subscriptionDTO.setQuota(0);
-        }
-        subscriptionDTO.setStartDate(new Timestamp(date.getTime()));
-        Calendar calendar = Calendar.getInstance();
-        calendar.setTime(date);
-        if(type.equals(monthly)){
-            calendar.add(Calendar.MONTH, 1);
-        }
-        else if(type.equals(lifetime)){
-            calendar.add(Calendar.YEAR, 99);
-        }
-        Date endDate = calendar.getTime();
-        subscriptionDTO.setEndDate(new Timestamp(endDate.getTime()));
-        subscriptionDTO.setCreatedDate(new Timestamp(date.getTime()));
-        subscriptionDTO.setUpdatedDate(new Timestamp(date.getTime()));
-        Subscription subscription = modelMapper.map(subscriptionDTO, Subscription.class);
-        return subscriptionRepository.save(subscription);
-    }
+    public static final String STATUS_ACTIVE = "active";
+    public static final String STATUS_EXPIRED = "expired";
 
-    public Subscription createAppSumoSubscription(String userUUID, String customerId, String customerEmail) {
-        ModelMapper modelMapper = new ModelMapper();
-        Date date = new Date();
-        SubscriptionDTO subscriptionDTO = new SubscriptionDTO();
-        subscriptionDTO.setUuid(UUID.randomUUID().toString());
-        subscriptionDTO.setCustomerId(customerId);
-        subscriptionDTO.setCustomerEmail(customerEmail);
-        subscriptionDTO.setPlan(autopilot);
-        subscriptionDTO.setType(lifetime);
-        subscriptionDTO.setPriceId("promo_code");
-        subscriptionDTO.setIsActive(true);
-        subscriptionDTO.setStatus(activeStatus);
-        subscriptionDTO.setQuota(autopilotQuota);
-        subscriptionDTO.setIteration(autopilotIteration);
-        subscriptionDTO.setStartDate(new Timestamp(date.getTime()));
-        Calendar calendar = Calendar.getInstance();
-        calendar.setTime(date);
-        calendar.add(Calendar.YEAR, 99);
-        Date endDate = calendar.getTime();
-        subscriptionDTO.setEndDate(new Timestamp(endDate.getTime()));
-        subscriptionDTO.setCreatedDate(new Timestamp(date.getTime()));
-        subscriptionDTO.setUpdatedDate(new Timestamp(date.getTime()));
-        Subscription subscription = modelMapper.map(subscriptionDTO, Subscription.class);
-        return subscriptionRepository.save(subscription);
-    }
+    public static final int FREE_QUOTA = 1;
+    public static final int B1_PAID_QUOTA = 10;
+    public static final int B1_ACCESS_DAYS = 60;
+    public static final int TESTER_ACCESS_DAYS = 7;
 
-    public Subscription createTesterSubscription(String userUUID, String customerEmail, int quota) {
-        ModelMapper modelMapper = new ModelMapper();
-        Date date = new Date();
-        SubscriptionDTO subscriptionDTO = new SubscriptionDTO();
-        subscriptionDTO.setUuid(UUID.randomUUID().toString());
-        subscriptionDTO.setCustomerId(customerEmail);
-        subscriptionDTO.setCustomerEmail(customerEmail);
-        subscriptionDTO.setPlan(tester);
-        subscriptionDTO.setType("monthly");
-        subscriptionDTO.setPriceId(tester);
-        subscriptionDTO.setIsActive(true);
-        subscriptionDTO.setStatus(activeStatus);
-        subscriptionDTO.setQuota(quota);
-        subscriptionDTO.setIteration(quota*20);
-        subscriptionDTO.setStartDate(new Timestamp(date.getTime()));
-        Calendar calendar = Calendar.getInstance();
-        calendar.setTime(date);
-        calendar.add(Calendar.DATE, 7);
-        Date endDate = calendar.getTime();
-        subscriptionDTO.setEndDate(new Timestamp(endDate.getTime()));
-        subscriptionDTO.setCreatedDate(new Timestamp(date.getTime()));
-        subscriptionDTO.setUpdatedDate(new Timestamp(date.getTime()));
-        Subscription subscription = modelMapper.map(subscriptionDTO, Subscription.class);
-        return subscriptionRepository.save(subscription);
-    }
-
+    /**
+     * Creates the one and only free access record for a new user.
+     * The free quota does not renew. There is intentionally no end date.
+     */
     public Subscription createFreeSubscription(String customerEmail) {
-        ModelMapper modelMapper = new ModelMapper();
-        Date date = new Date();
-        SubscriptionDTO subscriptionDTO = new SubscriptionDTO();
-        subscriptionDTO.setUuid(UUID.randomUUID().toString());
-        subscriptionDTO.setCustomerId(customerEmail);
-        subscriptionDTO.setCustomerEmail(customerEmail);
-        subscriptionDTO.setPlan(free);
-        subscriptionDTO.setType(monthly);
-        subscriptionDTO.setPriceId(free);
-        subscriptionDTO.setIsActive(true);
-        subscriptionDTO.setStatus(activeStatus);
-        subscriptionDTO.setQuota(freeQuota);
-        subscriptionDTO.setIteration(freeIteration);
-        subscriptionDTO.setStartDate(new Timestamp(date.getTime()));
-        Calendar calendar = Calendar.getInstance();
-        calendar.setTime(date);
-        calendar.add(Calendar.MONTH, 1);
-        Date endDate = calendar.getTime();
-        subscriptionDTO.setEndDate(new Timestamp(endDate.getTime()));
-        subscriptionDTO.setCreatedDate(new Timestamp(date.getTime()));
-        subscriptionDTO.setUpdatedDate(new Timestamp(date.getTime()));
-        Subscription subscription = modelMapper.map(subscriptionDTO, Subscription.class);
-        return subscriptionRepository.save(subscription);
+        Date now = new Date();
+        SubscriptionDTO dto = baseSubscription(customerEmail, customerEmail, PLAN_FREE, TYPE_FREE, PLAN_FREE, now);
+        dto.setQuota(FREE_QUOTA);
+        dto.setIteration(0); // legacy field kept for DB compatibility
+        dto.setEndDate(null);
+        return save(dto);
     }
 
+    /**
+     * Creates paid TELC B1 access. Normally the user already has a free record,
+     * so activateB1PaidSubscription(...) will be used instead.
+     */
+    public Subscription createB1PaidSubscription(String customerId, String customerEmail, String priceId) {
+        Date now = new Date();
+        SubscriptionDTO dto = baseSubscription(customerId, customerEmail, PLAN_B1, TYPE_ONE_TIME, priceId, now);
+        dto.setQuota(B1_PAID_QUOTA);
+        dto.setIteration(0); // legacy field kept for DB compatibility
+        dto.setEndDate(addDays(now, B1_ACCESS_DAYS));
+        return save(dto);
+    }
 
-    public Subscription updateSubscription(Subscription subscription, String customerId, String plan, String type, String priceId) {
-        Date date = new Date();
+    /**
+     * Converts the user's existing single access record (usually free) into the
+     * paid B1 product. A repurchase resets quota to 10 and starts a fresh 60-day
+     * access window from the new successful payment.
+     */
+    public Subscription activateB1PaidSubscription(
+            Subscription subscription,
+            String customerId,
+            String customerEmail,
+            String priceId
+    ) {
+        Date now = new Date();
         subscription.setCustomerId(customerId);
-        subscription.setPlan(plan);
-        subscription.setType(type);
+        subscription.setCustomerEmail(customerEmail);
+        subscription.setPlan(PLAN_B1);
+        subscription.setType(TYPE_ONE_TIME);
         subscription.setPriceId(priceId);
         subscription.setIsActive(true);
-        subscription.setStatus(activeStatus);
-        if(plan.equals(starter)){
-            subscription.setQuota(starterQuota);
-            subscription.setIteration(starterIteration);
-        }
-        else if(plan.equals(autopilot)){
-            subscription.setQuota(autopilotQuota);
-            subscription.setIteration(autopilotIteration);
-        }
-        else {
-            subscription.setIteration(0);
-            subscription.setQuota(0);
-        }
-
-        subscription.setStartDate(new Timestamp(date.getTime()));
-        Calendar calendar = Calendar.getInstance();
-        calendar.setTime(date);
-        if(type.equals(monthly)){
-            calendar.add(Calendar.MONTH, 1);
-        }
-        else if(type.equals(lifetime)){
-            calendar.add(Calendar.YEAR, 99);
-        }
-        Date endDate = calendar.getTime();
-        subscription.setEndDate(new Timestamp(endDate.getTime()));
-        subscription.setUpdatedDate(new Timestamp(date.getTime()));
+        subscription.setStatus(STATUS_ACTIVE);
+        subscription.setQuota(B1_PAID_QUOTA);
+        subscription.setIteration(0);
+        subscription.setStartDate(new Timestamp(now.getTime()));
+        subscription.setEndDate(addDays(now, B1_ACCESS_DAYS));
+        subscription.setUpdatedDate(new Timestamp(now.getTime()));
         return subscriptionRepository.save(subscription);
     }
 
-    public void resetQuotas(){
+    /**
+     * Tester accounts are intentionally kept. They use the same single-record
+     * model but can be created with a custom quota and expire after 7 days.
+     */
+    public Subscription createTesterSubscription(String userUUID, String customerEmail, int quota) {
+        Date now = new Date();
+        SubscriptionDTO dto = baseSubscription(customerEmail, customerEmail, PLAN_TESTER, TYPE_TESTER, PLAN_TESTER, now);
+        dto.setQuota(quota);
+        dto.setIteration(0);
+        dto.setEndDate(addDays(now, TESTER_ACCESS_DAYS));
+        return save(dto);
+    }
+
+    /**
+     * Returns true only when access is active, not expired and at least one quota remains.
+     */
+    public boolean hasAvailableQuota(Subscription subscription) {
+        if (subscription == null || !Boolean.TRUE.equals(subscription.getIsActive())) {
+            return false;
+        }
+
+        if (isExpired(subscription)) {
+            expireSubscription(subscription);
+            return false;
+        }
+
+        return subscription.getQuota() > 0;
+    }
+
+    /**
+     * Call this when the user starts/commits a mock exam that should consume one quota.
+     * Returns false when the app should block the action and show the payment wall.
+     */
+    @Transactional
+    public boolean consumeQuota(Subscription subscription) {
+        if (!hasAvailableQuota(subscription)) {
+            return false;
+        }
+
+        subscription.setQuota(subscription.getQuota() - 1);
+        subscription.setUpdatedDate(new Timestamp(System.currentTimeMillis()));
+        subscriptionRepository.save(subscription);
+        return true;
+    }
+
+    /**
+     * Kept under the old method name so an existing scheduler does not break.
+     * Unlike the old subscription model, quotas are never replenished here.
+     * Only time-limited paid/tester access is expired.
+     */
+    public void resetQuotas() {
         try {
-            Date date = new Date();
-            Timestamp currentDateTime = new Timestamp(date.getTime());
             List<Subscription> subscriptions = subscriptionRepository.findAll();
             for (Subscription subscription : subscriptions) {
-                if(currentDateTime.after(subscription.getEndDate())){
-                    if(subscription.getStatus().equals(activeStatus)) {
-                        resetSubscription(subscription);
-                    }
-                    else  if(subscription.getStatus().equals(cancellationRequestedStatus)){
-                        cancelSubscription(subscription);
-                    }
+                if (isExpired(subscription)) {
+                    expireSubscription(subscription);
                 }
             }
-        }
-        catch (Exception ex){
-            logger.error(ex.getMessage());
+        } catch (Exception ex) {
+            logger.error(ex.getMessage(), ex);
         }
     }
 
-    private Subscription resetSubscription(Subscription subscription) {
-        Date date = new Date();
-        if(subscription.getPlan().equals(starter)){
-            subscription.setIteration(starterIteration);
-            subscription.setQuota(starterQuota);
+    public Subscription expireSubscription(Subscription subscription) {
+        if (subscription == null) {
+            return null;
         }
-        else if (subscription.getPlan().equals(autopilot)){
-           return subscription;
-        }
-        else {
-            subscription.setIteration(0);
-            subscription.setQuota(0);
-        }
-        subscription.setStartDate(new Timestamp(date.getTime()));
-        Calendar calendar = Calendar.getInstance();
-        calendar.setTime(date);
-        String type = subscription.getType();
-        if(type.equals(monthly)){
-            calendar.add(Calendar.MONTH, 1);
-        }
-        Date endDate = calendar.getTime();
-        subscription.setEndDate(new Timestamp(endDate.getTime()));
-        subscription.setUpdatedDate(new Timestamp(date.getTime()));
-        return subscriptionRepository.save(subscription);
-    }
 
-    public Subscription requestCancellationSubscription(Subscription subscription) {
-        Date date = new Date();
-        subscription.setStatus(cancellationRequestedStatus);
-        subscription.setUpdatedDate(new Timestamp(date.getTime()));
-        return subscriptionRepository.save(subscription);
-    }
-
-    public Subscription cancelSubscription(Subscription subscription) {
-        Date date = new Date();
         subscription.setIsActive(false);
-        subscription.setStatus(cancelledStatus);
-        subscription.setUpdatedDate(new Timestamp(date.getTime()));
-        User user = usersRepository.findByEmail(subscription.getCustomerEmail());
+        subscription.setStatus(STATUS_EXPIRED);
+        subscription.setQuota(0);
+        subscription.setIteration(0);
+        subscription.setUpdatedDate(new Timestamp(System.currentTimeMillis()));
         return subscriptionRepository.save(subscription);
     }
 
     public Subscription updateSubscription(Subscription subscription) {
-        Date date = new Date();
-        subscription.setUpdatedDate(new Timestamp(date.getTime()));
+        subscription.setUpdatedDate(new Timestamp(System.currentTimeMillis()));
         return subscriptionRepository.save(subscription);
     }
 
-    public Subscription findSubscriptionByCustomerId(String customerId) {;
+    public Subscription findSubscriptionByCustomerId(String customerId) {
         return subscriptionRepository.findByCustomerId(customerId);
     }
 
-    public Subscription findSubscriptionByCustomerEmail(String customerEmail) {;
+    public Subscription findSubscriptionByCustomerEmail(String customerEmail) {
         return subscriptionRepository.findByCustomerEmail(customerEmail);
     }
 
     public Page<Subscription> getSubscriptions(Pageable pageable) {
         return subscriptionRepository.findAll(pageable);
+    }
+
+    private boolean isExpired(Subscription subscription) {
+        if (subscription.getEndDate() == null) {
+            return false;
+        }
+        return new Timestamp(System.currentTimeMillis()).after(subscription.getEndDate());
+    }
+
+    private SubscriptionDTO baseSubscription(
+            String customerId,
+            String customerEmail,
+            String plan,
+            String type,
+            String priceId,
+            Date now
+    ) {
+        SubscriptionDTO dto = new SubscriptionDTO();
+        dto.setUuid(UUID.randomUUID().toString());
+        dto.setCustomerId(customerId);
+        dto.setCustomerEmail(customerEmail);
+        dto.setPlan(plan);
+        dto.setType(type);
+        dto.setPriceId(priceId);
+        dto.setIsActive(true);
+        dto.setStatus(STATUS_ACTIVE);
+        dto.setStartDate(new Timestamp(now.getTime()));
+        dto.setCreatedDate(new Timestamp(now.getTime()));
+        dto.setUpdatedDate(new Timestamp(now.getTime()));
+        return dto;
+    }
+
+    private Timestamp addDays(Date from, int days) {
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(from);
+        calendar.add(Calendar.DATE, days);
+        return new Timestamp(calendar.getTimeInMillis());
+    }
+
+    private Subscription save(SubscriptionDTO dto) {
+        ModelMapper modelMapper = new ModelMapper();
+        Subscription subscription = modelMapper.map(dto, Subscription.class);
+        return subscriptionRepository.save(subscription);
     }
 }

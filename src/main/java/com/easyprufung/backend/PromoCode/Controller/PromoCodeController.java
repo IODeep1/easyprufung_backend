@@ -38,34 +38,13 @@ public class PromoCodeController {
             User user = userService.getUserByEmail(httpClientConsumer.email);
             if(user != null)
             {
-                if(user.getSubscriptions().stream().count() != 0) {
-                    var currentSubscription = user.getSubscriptions().stream().findFirst().get();
-                    if(currentSubscription.getPlan().equals("free"))
-                        user.getSubscriptions().remove(currentSubscription);
-                    else{
-                        throw new ResponseStatusException(
-                                HttpStatus.BAD_REQUEST, "FAILED_TO_ACTIVATE_CODE");
-                    }
-                }
                 if(code.equalsIgnoreCase("starter4next") || code.equalsIgnoreCase("aico2025"))
                 {
                     Subscription newSubscription = subscriptionService.createTesterSubscription(user.getUuid(), user.getEmail(), 2);
-                    user.addSubscription(newSubscription);
+                    user.setSubscription(newSubscription);
                     userService.updateUser(user);
                     userService.sendNewSubscriptionEmail(user);
                     response = "ACTIVATED";
-                }
-                else
-                {
-                    PromoCode promoCode = promoCodeService.activateAppSumoPromoCode(code);
-                    if(promoCode != null)
-                    {
-                        Subscription newSubscription = subscriptionService.createAppSumoSubscription(user.getUuid(), String.valueOf(user.getId()),user.getEmail());
-                        user.addSubscription(newSubscription);
-                        userService.updateUser(user);
-                        userService.sendNewSubscriptionEmail(user);
-                        response = "ACTIVATED";
-                    }
                 }
             }
             return ResponseEntity.ok(response);
