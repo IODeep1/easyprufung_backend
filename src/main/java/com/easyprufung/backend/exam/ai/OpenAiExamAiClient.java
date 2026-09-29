@@ -96,6 +96,7 @@ public class OpenAiExamAiClient implements ExamAiClient {
                             new OpenAiResponsesRequest.JsonSchemaFormat(
                                     JSON_SCHEMA_TYPE, schemaName, true, schema)),
                     properties.getMaxOutputTokens(),
+                    promptCacheKey(schemaName),
                     false);
 
             HttpHeaders headers = createHeaders();
@@ -129,6 +130,17 @@ public class OpenAiExamAiClient implements ExamAiClient {
             headers.set("OpenAI-Project", properties.getProject());
         }
         return headers;
+    }
+
+    private String promptCacheKey(String schemaName) {
+        if (!properties.isPromptCacheEnabled()
+                || !hasText(properties.getPromptCacheKeyPrefix())) {
+            return null;
+        }
+
+        return properties.getPromptCacheKeyPrefix().trim()
+                + "-"
+                + schemaName;
     }
 
     private String extractOutputText(OpenAiResponsesResponse response) {

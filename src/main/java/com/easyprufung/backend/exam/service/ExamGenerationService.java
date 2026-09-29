@@ -4,50 +4,66 @@ import com.easyprufung.backend.exam.ai.*;
 import com.easyprufung.backend.exam.domain.*;
 import com.easyprufung.backend.exam.dto.*;
 import com.easyprufung.backend.exam.exception.ExamConfigurationException;
+import com.easyprufung.backend.exam.exception.AiIntegrationException;
 import com.easyprufung.backend.exam.mapper.ExamViewMapper;
 import com.easyprufung.backend.exam.repository.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.*;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.Executor;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 
 @Service
 public class ExamGenerationService {
     private static final String AI_SCHEMA_VERSION = "1.0";
+    private static final Logger log = LoggerFactory.getLogger(ExamGenerationService.class);
     private final ExamDefinitionService definitionService;
     private final ExerciseTemplateRepository templateRepository;
     private final ExamSessionRepository sessionRepository;
     private final ExamAiClient aiClient;
     private final JsonSupport json;
     private final ExamViewMapper mapper;
+    private final Executor generationExecutor;
 
     public ExamGenerationService(ExamDefinitionService definitionService,
                                  ExerciseTemplateRepository templateRepository,
                                  ExamSessionRepository sessionRepository,
-                                 ExamAiClient aiClient, JsonSupport json, ExamViewMapper mapper) {
+                                 ExamAiClient aiClient,
+                                 JsonSupport json,
+                                 ExamViewMapper mapper,
+                                 @Qualifier("examGenerationExecutor") Executor generationExecutor) {
         this.definitionService = definitionService;
         this.templateRepository = templateRepository;
         this.sessionRepository = sessionRepository;
         this.aiClient = aiClient;
         this.json = json;
         this.mapper = mapper;
+        this.generationExecutor = generationExecutor;
     }
 
-    @Transactional
     public ExamSessionView start(StartExamRequest request) {
+        Instant requestStartedAt = Instant.now();
         ExamDefinition definition = definitionService.resolve(request);
         validateDefinition(definition);
-        Instant now = Instant.now();
+
+        List<PartDefinition> parts = orderedParts(definition);
+        Map<UUID, CompletableFuture<AiGeneratedExerciseResponse>> aiResponses =
+                startAiGeneration(definition, parts);
+
         ExamSession session = new ExamSession();
         session.setUserId(request.getUserId());
         session.setExamDefinition(definition);
         session.setDefinitionVersion(definition.getDefinitionVersion());
         session.setStatus(SessionStatus.IN_PROGRESS);
-        session.setCreatedAt(now);
-        session.setStartedAt(now);
+        session.setCreatedAt(requestStartedAt);
+
         Map<String, Integer> timingGroups = new HashMap<>();
         for (SectionDefinition section : definition.getSections()) {
             if (section.getDurationSeconds() != null) {
@@ -56,34 +72,147 @@ public class ExamGenerationService {
             }
         }
         int duration = timingGroups.values().stream().mapToInt(Integer::intValue).sum();
-        session.setExpiresAt(duration > 0 ? now.plusSeconds(duration) : null);
 
         int order = 0;
-        for (SectionDefinition section : sortedSections(definition)) {
-            for (PartDefinition part : sortedParts(section)) {
-                ExerciseInstance exercise;
+        for (PartDefinition part : parts) {
+            ExerciseInstance exercise;
 
-                switch (part.getContentSource()) {
-                    case AI_GENERATED:
-                        exercise = fromAi(definition, part);
-                        break;
+            switch (part.getContentSource()) {
+                case AI_GENERATED:
+                    exercise = fromAi(
+                            part,
+                            awaitAiResponse(part, aiResponses.get(part.getId()))
+                    );
+                    break;
 
-                    case PREDEFINED:
-                    case AUDIO_PREDEFINED:
-                        exercise = fromTemplate(part);
-                        break;
+                case PREDEFINED:
+                case AUDIO_PREDEFINED:
+                    exercise = fromTemplate(part);
+                    break;
 
-                    default:
-                        throw new IllegalArgumentException(
-                                "Unsupported content source: " + part.getContentSource()
-                        );
-                }
-
-                exercise.setOrderIndex(order++);
-                session.addExercise(exercise);
+                default:
+                    throw new IllegalArgumentException(
+                            "Unsupported content source: " + part.getContentSource()
+                    );
             }
+
+            exercise.setOrderIndex(order++);
+            session.addExercise(exercise);
         }
-        return mapper.toView(sessionRepository.save(session));
+
+        /*
+         * The candidate's exam time starts only after every exercise is ready.
+         * AI generation time must never reduce the available exam duration.
+         */
+        Instant examStartedAt = Instant.now();
+        session.setStartedAt(examStartedAt);
+        session.setExpiresAt(
+                duration > 0 ? examStartedAt.plusSeconds(duration) : null
+        );
+
+        ExamSession saved = sessionRepository.save(session);
+
+        log.info(
+                "Created exam session {} with {} parts in {} ms",
+                saved.getId(),
+                saved.getExercises().size(),
+                Duration.between(requestStartedAt, Instant.now()).toMillis()
+        );
+
+        return mapper.toView(saved);
+    }
+
+    private Map<UUID, CompletableFuture<AiGeneratedExerciseResponse>> startAiGeneration(
+            ExamDefinition definition,
+            List<PartDefinition> parts
+    ) {
+        Map<UUID, CompletableFuture<AiGeneratedExerciseResponse>> responses =
+                new HashMap<>();
+
+        for (PartDefinition part : parts) {
+            if (part.getContentSource() != ContentSource.AI_GENERATED) {
+                continue;
+            }
+
+            AiExerciseGenerationRequest aiRequest =
+                    createAiRequest(definition, part);
+            String partKey = part.getPartKey();
+
+            responses.put(
+                    part.getId(),
+                    CompletableFuture.supplyAsync(
+                            () -> generatePart(partKey, aiRequest),
+                            generationExecutor
+                    )
+            );
+        }
+
+        return responses;
+    }
+
+    private AiGeneratedExerciseResponse generatePart(
+            String partKey,
+            AiExerciseGenerationRequest request
+    ) {
+        Instant startedAt = Instant.now();
+
+        try {
+            return aiClient.generateExercise(request);
+        } finally {
+            log.info(
+                    "OpenAI generation for part {} finished in {} ms",
+                    partKey,
+                    Duration.between(startedAt, Instant.now()).toMillis()
+            );
+        }
+    }
+
+    private AiGeneratedExerciseResponse awaitAiResponse(
+            PartDefinition part,
+            CompletableFuture<AiGeneratedExerciseResponse> future
+    ) {
+        if (future == null) {
+            throw new ExamConfigurationException(
+                    "Missing AI generation task for part " + part.getPartKey()
+            );
+        }
+
+        try {
+            return future.join();
+        } catch (CompletionException exception) {
+            Throwable cause = exception.getCause();
+
+            if (cause instanceof RuntimeException) {
+                throw (RuntimeException) cause;
+            }
+
+            throw new AiIntegrationException(
+                    "AI generation failed for part " + part.getPartKey(),
+                    cause
+            );
+        }
+    }
+
+    private AiExerciseGenerationRequest createAiRequest(
+            ExamDefinition definition,
+            PartDefinition part
+    ) {
+        return new AiExerciseGenerationRequest(
+                AI_SCHEMA_VERSION,
+                definition.getCode(),
+                definition.getProvider(),
+                definition.getLevel(),
+                part.getSectionDefinition().getSectionKey(),
+                part.getPartKey(),
+                part.getQuestionType(),
+                part.getFirstQuestionNumber(),
+                part.getQuestionCount(),
+                part.getPointsPerQuestion(),
+                part.getMinimumWords(),
+                part.getMaximumWords(),
+                part.getGenerationInstructions(),
+                "de-DE"
+        );
     }
 
     private ExerciseInstance fromTemplate(PartDefinition part) {
@@ -122,12 +251,10 @@ public class ExamGenerationService {
         return target;
     }
 
-    private ExerciseInstance fromAi(ExamDefinition definition, PartDefinition part) {
-        AiGeneratedExerciseResponse generated = aiClient.generateExercise(new AiExerciseGenerationRequest(
-                AI_SCHEMA_VERSION, definition.getCode(), definition.getProvider(), definition.getLevel(),
-                part.getSectionDefinition().getSectionKey(), part.getPartKey(), part.getQuestionType(),
-                part.getFirstQuestionNumber(), part.getQuestionCount(), part.getPointsPerQuestion(),
-                part.getMinimumWords(), part.getMaximumWords(), part.getGenerationInstructions(), "de-DE"));
+    private ExerciseInstance fromAi(
+            PartDefinition part,
+            AiGeneratedExerciseResponse generated
+    ) {
         ExerciseInstance exercise = new ExerciseInstance();
         exercise.setPartDefinition(part);
         exercise.setInstructions(generated.getInstructions());
@@ -209,5 +336,11 @@ public class ExamGenerationService {
     }
     private List<PartDefinition> sortedParts(SectionDefinition section) {
         return section.getParts().stream().sorted(Comparator.comparingInt(PartDefinition::getOrderIndex)).collect(Collectors.toList());
+    }
+
+    private List<PartDefinition> orderedParts(ExamDefinition definition) {
+        return sortedSections(definition).stream()
+                .flatMap(section -> sortedParts(section).stream())
+                .collect(Collectors.toList());
     }
 }

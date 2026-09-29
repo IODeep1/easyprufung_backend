@@ -17,6 +17,10 @@ public class AiProperties {
     private String organization;
     private String project;
     private int maxOutputTokens = 25000;
+    private int generationParallelism = 6;
+    private int generationQueueCapacity = 24;
+    private boolean promptCacheEnabled = true;
+    private String promptCacheKeyPrefix = "easyprufung-exam";
     private Duration connectTimeout = Duration.ofSeconds(5);
     private Duration readTimeout = Duration.ofSeconds(120);
 }

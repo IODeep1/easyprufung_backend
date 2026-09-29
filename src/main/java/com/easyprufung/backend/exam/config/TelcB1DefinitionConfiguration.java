@@ -26,7 +26,7 @@ public class TelcB1DefinitionConfiguration implements ApplicationRunner {
      * Increase this whenever the exam definition or generation
      * instructions change.
      */
-    private static final int DEFINITION_VERSION = 3;
+    private static final int DEFINITION_VERSION = 1;
 
     private final ExamDefinitionRepository repository;
 
@@ -39,7 +39,7 @@ public class TelcB1DefinitionConfiguration implements ApplicationRunner {
     @Override
     @Transactional
     public void run(ApplicationArguments args) {
-        if (repository.existsByCodeAndDefinitionVersion(CODE, 1)) return;
+        if (repository.existsByCodeAndDefinitionVersion(CODE, DEFINITION_VERSION)) return;
         ExamDefinition exam = new ExamDefinition();
         exam.setCode(CODE);
         exam.setProvider(ExamProvider.TELC);
@@ -47,7 +47,7 @@ public class TelcB1DefinitionConfiguration implements ApplicationRunner {
         exam.setTitle(
                 "telc Deutsch B1 — Schriftliche Prüfung"
         );
-        exam.setDefinitionVersion(1);
+        exam.setDefinitionVersion(DEFINITION_VERSION);
         exam.setActive(true);
         exam.setMaximumScore(bd("225"));
         exam.setPassPercentage(bd("60"));

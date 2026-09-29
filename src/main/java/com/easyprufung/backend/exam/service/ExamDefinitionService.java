@@ -25,11 +25,22 @@ public class ExamDefinitionService {
 
     @Transactional(readOnly = true)
     public ExamDefinition resolve(com.easyprufung.backend.exam.dto.StartExamRequest request) {
-        return (request.getExamCode() == null || request.getExamCode().isBlank()
+        ExamDefinition definition = (request.getExamCode() == null || request.getExamCode().isBlank()
                 ? repository.findFirstByProviderAndLevelAndActiveTrueOrderByDefinitionVersionDesc(
                         request.getProvider(), request.getLevel())
                 : repository.findFirstByProviderAndLevelAndCodeAndActiveTrueOrderByDefinitionVersionDesc(
                         request.getProvider(), request.getLevel(), request.getExamCode()))
                 .orElseThrow(() -> new ResourceNotFoundException("No active exam definition matches the request"));
+
+        /*
+         * Generation intentionally runs outside a database transaction while
+         * waiting for OpenAI. Initialize the small definition graph here so it
+         * remains safely readable after this read-only transaction ends.
+         */
+        definition.getSections().forEach(
+                section -> section.getParts().size()
+        );
+
+        return definition;
     }
 }
