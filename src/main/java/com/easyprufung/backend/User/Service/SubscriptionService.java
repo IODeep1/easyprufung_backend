@@ -8,6 +8,7 @@ import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.env.Environment;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -29,8 +30,14 @@ public class SubscriptionService {
     @Autowired
     SubscriptionRepository subscriptionRepository;
 
+    @Autowired
+    Environment env;
+
     public static final String PLAN_FREE = "free";
+    /** 10-exam TELC B1 pass. */
     public static final String PLAN_B1 = "b1";
+    /** Unlimited TELC B1 pass. */
+    public static final String PLAN_B1_UNLIMITED = "b1_unlimited";
     public static final String PLAN_TESTER = "tester";
 
     public static final String TYPE_FREE = "free";
@@ -59,22 +66,42 @@ public class SubscriptionService {
     }
 
     /**
-     * Creates paid TELC B1 access. Normally the user already has a free record,
-     * so activateB1PaidSubscription(...) will be used instead.
+     * Backwards-compatible helper for the 10-exam paid pass.
      */
     public Subscription createB1PaidSubscription(String customerId, String customerEmail, String priceId) {
-        Date now = new Date();
-        SubscriptionDTO dto = baseSubscription(customerId, customerEmail, PLAN_B1, TYPE_ONE_TIME, priceId, now);
-        dto.setQuota(B1_PAID_QUOTA);
-        dto.setIteration(0); // legacy field kept for DB compatibility
-        dto.setEndDate(addDays(now, B1_ACCESS_DAYS));
-        return save(dto);
+        return createPaidB1Subscription(customerId, customerEmail, priceId, false);
     }
 
     /**
-     * Converts the user's existing single access record (usually free) into the
-     * paid B1 product. A repurchase resets quota to 10 and starts a fresh 60-day
-     * access window from the new successful payment.
+     * Creates the unlimited TELC B1 pass.
+     */
+    public Subscription createB1UnlimitedSubscription(String customerId, String customerEmail, String priceId) {
+        return createPaidB1Subscription(customerId, customerEmail, priceId, true);
+    }
+
+    /**
+     * Preferred Stripe fulfillment entry point. The Stripe Price ID determines
+     * whether the purchase grants 10 exams or unlimited exams.
+     *
+     * Required properties:
+     * easyprufung.stripe.priceidb1=<10-exam price id>
+     * easyprufung.stripe.priceidb1unlimited=<unlimited price id>
+     */
+    public Subscription createB1PaidSubscriptionByPriceId(
+            String customerId,
+            String customerEmail,
+            String priceId
+    ) {
+        return createPaidB1Subscription(
+                customerId,
+                customerEmail,
+                priceId,
+                isUnlimitedPriceId(priceId)
+        );
+    }
+
+    /**
+     * Backwards-compatible activation for the 10-exam paid pass.
      */
     public Subscription activateB1PaidSubscription(
             Subscription subscription,
@@ -82,20 +109,38 @@ public class SubscriptionService {
             String customerEmail,
             String priceId
     ) {
-        Date now = new Date();
-        subscription.setCustomerId(customerId);
-        subscription.setCustomerEmail(customerEmail);
-        subscription.setPlan(PLAN_B1);
-        subscription.setType(TYPE_ONE_TIME);
-        subscription.setPriceId(priceId);
-        subscription.setIsActive(true);
-        subscription.setStatus(STATUS_ACTIVE);
-        subscription.setQuota(B1_PAID_QUOTA);
-        subscription.setIteration(0);
-        subscription.setStartDate(new Timestamp(now.getTime()));
-        subscription.setEndDate(addDays(now, B1_ACCESS_DAYS));
-        subscription.setUpdatedDate(new Timestamp(now.getTime()));
-        return subscriptionRepository.save(subscription);
+        return activatePaidB1Subscription(subscription, customerId, customerEmail, priceId, false);
+    }
+
+    /**
+     * Activates the unlimited TELC B1 pass.
+     */
+    public Subscription activateB1UnlimitedSubscription(
+            Subscription subscription,
+            String customerId,
+            String customerEmail,
+            String priceId
+    ) {
+        return activatePaidB1Subscription(subscription, customerId, customerEmail, priceId, true);
+    }
+
+    /**
+     * Preferred Stripe fulfillment entry point for an existing user's single
+     * subscription record. The Price ID selects the purchased tier.
+     */
+    public Subscription activateB1PaidSubscriptionByPriceId(
+            Subscription subscription,
+            String customerId,
+            String customerEmail,
+            String priceId
+    ) {
+        return activatePaidB1Subscription(
+                subscription,
+                customerId,
+                customerEmail,
+                priceId,
+                isUnlimitedPriceId(priceId)
+        );
     }
 
     /**
@@ -112,7 +157,8 @@ public class SubscriptionService {
     }
 
     /**
-     * Returns true only when access is active, not expired and at least one quota remains.
+     * Returns true when access is active and not expired. Limited/free/tester
+     * plans additionally require quota; b1_unlimited does not.
      */
     public boolean hasAvailableQuota(Subscription subscription) {
         if (subscription == null || !Boolean.TRUE.equals(subscription.getIsActive())) {
@@ -124,17 +170,25 @@ public class SubscriptionService {
             return false;
         }
 
+        if (isUnlimitedAccess(subscription)) {
+            return true;
+        }
+
         return subscription.getQuota() > 0;
     }
 
     /**
-     * Call this when the user starts/commits a mock exam that should consume one quota.
-     * Returns false when the app should block the action and show the payment wall.
+     * Consumes one exam for quota-based plans. Unlimited access is validated but
+     * never decremented.
      */
     @Transactional
     public boolean consumeQuota(Subscription subscription) {
         if (!hasAvailableQuota(subscription)) {
             return false;
+        }
+
+        if (isUnlimitedAccess(subscription)) {
+            return true;
         }
 
         subscription.setQuota(subscription.getQuota() - 1);
@@ -143,10 +197,13 @@ public class SubscriptionService {
         return true;
     }
 
+    public boolean isUnlimitedAccess(Subscription subscription) {
+        return subscription != null && PLAN_B1_UNLIMITED.equalsIgnoreCase(subscription.getPlan());
+    }
+
     /**
      * Kept under the old method name so an existing scheduler does not break.
-     * Unlike the old subscription model, quotas are never replenished here.
-     * Only time-limited paid/tester access is expired.
+     * Quotas are never replenished here; only time-limited access is expired.
      */
     public void resetQuotas() {
         try {
@@ -189,6 +246,63 @@ public class SubscriptionService {
 
     public Page<Subscription> getSubscriptions(Pageable pageable) {
         return subscriptionRepository.findAll(pageable);
+    }
+
+    private Subscription createPaidB1Subscription(
+            String customerId,
+            String customerEmail,
+            String priceId,
+            boolean unlimited
+    ) {
+        Date now = new Date();
+        String plan = unlimited ? PLAN_B1_UNLIMITED : PLAN_B1;
+        SubscriptionDTO dto = baseSubscription(customerId, customerEmail, plan, TYPE_ONE_TIME, priceId, now);
+        dto.setQuota(unlimited ? 0 : B1_PAID_QUOTA);
+        dto.setIteration(0);
+        dto.setEndDate(addDays(now, B1_ACCESS_DAYS));
+        return save(dto);
+    }
+
+    private Subscription activatePaidB1Subscription(
+            Subscription subscription,
+            String customerId,
+            String customerEmail,
+            String priceId,
+            boolean unlimited
+    ) {
+        Date now = new Date();
+        subscription.setCustomerId(customerId);
+        subscription.setCustomerEmail(customerEmail);
+        subscription.setPlan(unlimited ? PLAN_B1_UNLIMITED : PLAN_B1);
+        subscription.setType(TYPE_ONE_TIME);
+        subscription.setPriceId(priceId);
+        subscription.setIsActive(true);
+        subscription.setStatus(STATUS_ACTIVE);
+        subscription.setQuota(unlimited ? 0 : B1_PAID_QUOTA);
+        subscription.setIteration(0);
+        subscription.setStartDate(new Timestamp(now.getTime()));
+        subscription.setEndDate(addDays(now, B1_ACCESS_DAYS));
+        subscription.setUpdatedDate(new Timestamp(now.getTime()));
+        return subscriptionRepository.save(subscription);
+    }
+
+    private boolean isUnlimitedPriceId(String priceId) {
+        String limitedPriceId = env.getProperty("easyprufung.stripe.priceidb1");
+        String unlimitedPriceId = env.getProperty("easyprufung.stripe.priceidb1unlimited");
+
+        if (priceId == null || priceId.isBlank()) {
+            throw new IllegalArgumentException("STRIPE_PRICE_ID_MISSING");
+        }
+
+        if (unlimitedPriceId != null && !unlimitedPriceId.isBlank() && unlimitedPriceId.equals(priceId)) {
+            return true;
+        }
+
+        if (limitedPriceId != null && !limitedPriceId.isBlank() && limitedPriceId.equals(priceId)) {
+            return false;
+        }
+
+        throw new IllegalArgumentException("UNKNOWN_STRIPE_PRICE_ID");
     }
 
     private boolean isExpired(Subscription subscription) {

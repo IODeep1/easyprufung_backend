@@ -7,6 +7,7 @@ import com.easyprufung.backend.User.User;
 import com.stripe.Stripe;
 import com.stripe.model.Customer;
 import com.stripe.model.Event;
+import com.stripe.model.LineItem;
 import com.stripe.model.checkout.Session;
 import com.stripe.net.ApiResource;
 import com.stripe.net.Webhook;
@@ -27,7 +28,9 @@ import javax.servlet.http.HttpServletRequest;
 @RestController
 @RequiredArgsConstructor
 public class WebhookController {
-    private static final Logger logger = LoggerFactory.getLogger(WebhookController.class);
+
+    private static final Logger logger =
+            LoggerFactory.getLogger(WebhookController.class);
 
     @Autowired
     UserService userService;
@@ -39,13 +42,26 @@ public class WebhookController {
     private Environment env;
 
     @PostMapping("/public/stripe/webhook")
-    public ResponseEntity<String> handleWebhook(@RequestBody String payload, HttpServletRequest request) {
-        String apiSecret = env.getProperty("easyprufung.stripe.apisecret");
-        String webHookSecret = env.getProperty("easyprufung.stripe.webhooksecret");
-        String priceIdB1 = env.getProperty("easyprufung.stripe.priceidb1");
+    public ResponseEntity<String> handleWebhook(
+            @RequestBody String payload,
+            HttpServletRequest request
+    ) {
+        String apiSecret =
+                env.getProperty("easyprufung.stripe.apisecret");
+        String webHookSecret =
+                env.getProperty("easyprufung.stripe.webhooksecret");
+
+        String priceIdB1 =
+                env.getProperty("easyprufung.stripe.priceidb1");
+
+        String priceIdB1Unlimited =
+                env.getProperty(
+                        "easyprufung.stripe.priceidb1unlimited"
+                );
 
         try {
             Stripe.apiKey = apiSecret;
+
             Event event = Webhook.constructEvent(
                     payload,
                     request.getHeader("Stripe-Signature"),
@@ -55,88 +71,278 @@ public class WebhookController {
             switch (event.getType()) {
                 case "checkout.session.completed":
                 case "checkout.session.async_payment_succeeded":
-                    processSuccessfulCheckout(event, priceIdB1);
+                    processSuccessfulCheckout(
+                            event,
+                            priceIdB1,
+                            priceIdB1Unlimited
+                    );
                     break;
+
                 default:
-                    // No recurring subscription events are needed anymore.
+                    // One-time payment model:
+                    // no recurring subscription events are required.
                     break;
             }
 
-            return ResponseEntity.ok("Webhook handled: " + event.getType());
+            return ResponseEntity.ok(
+                    "Webhook handled: " + event.getType()
+            );
+
         } catch (Exception e) {
             logger.error("Stripe webhook error", e);
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+
+            return ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
                     .body("Webhook error: " + e.getMessage());
         }
     }
 
-    private void processSuccessfulCheckout(Event event, String priceIdB1) throws Exception {
-        String json = event.getDataObjectDeserializer().getRawJson();
-        Session eventSession = ApiResource.GSON.fromJson(json, Session.class);
+    private void processSuccessfulCheckout(
+            Event event,
+            String priceIdB1,
+            String priceIdB1Unlimited
+    ) throws Exception {
 
-        SessionRetrieveParams params = SessionRetrieveParams.builder()
-                .addExpand("line_items")
-                .build();
-        Session session = Session.retrieve(eventSession.getId(), params, null);
+        String json =
+                event.getDataObjectDeserializer().getRawJson();
 
-        // checkout.session.completed can be emitted before delayed payment methods settle.
-        // Only grant access once Stripe reports the payment as paid.
-        if (!"paid".equalsIgnoreCase(session.getPaymentStatus())) {
-            logger.info("Ignoring unpaid Checkout Session {}", session.getId());
+        Session eventSession =
+                ApiResource.GSON.fromJson(json, Session.class);
+
+        SessionRetrieveParams params =
+                SessionRetrieveParams.builder()
+                        .addExpand("line_items")
+                        .build();
+
+        Session session =
+                Session.retrieve(
+                        eventSession.getId(),
+                        params,
+                        null
+                );
+
+        /*
+         * EasyPrufung now uses Stripe one-time payments only.
+         */
+        if (session.getMode() != null
+                && !"payment".equalsIgnoreCase(session.getMode())) {
+
+            logger.info(
+                    "Ignoring Checkout Session {} with mode {}",
+                    session.getId(),
+                    session.getMode()
+            );
+
             return;
         }
 
-        if (session.getLineItems() == null || session.getLineItems().getData().isEmpty()) {
-            throw new IllegalStateException("Stripe Checkout Session contains no line items");
-        }
+        /*
+         * checkout.session.completed can happen before delayed
+         * payment methods have actually settled.
+         *
+         * Access is granted only when Stripe reports "paid".
+         */
+        if (!"paid".equalsIgnoreCase(
+                session.getPaymentStatus()
+        )) {
+            logger.info(
+                    "Ignoring unpaid Checkout Session {}",
+                    session.getId()
+            );
 
-        String paidPriceId = session.getLineItems().getData().get(0).getPrice().getId();
-        if (priceIdB1 == null || !priceIdB1.equals(paidPriceId)) {
-            logger.info("Ignoring Checkout Session {} for unrelated price {}", session.getId(), paidPriceId);
             return;
         }
 
-        String clientReferenceId = session.getClientReferenceId();
-        if (clientReferenceId == null || clientReferenceId.isEmpty()) {
-            throw new IllegalStateException("Stripe client_reference_id is missing");
+        if (session.getLineItems() == null
+                || session.getLineItems()
+                        .getData()
+                        .isEmpty()) {
+
+            throw new IllegalStateException(
+                    "Stripe Checkout Session contains no line items"
+            );
         }
 
-        User user = userService.getUserByUUID(clientReferenceId);
+        /*
+         * Payment Links currently contain one EasyPrufung product.
+         * Find the supported price rather than blindly trusting
+         * the first line item.
+         */
+        String paidPriceId = findSupportedPriceId(
+                session,
+                priceIdB1,
+                priceIdB1Unlimited
+        );
+
+        if (paidPriceId == null) {
+            logger.info(
+                    "Ignoring Checkout Session {} because it contains no supported EasyPrufung price",
+                    session.getId()
+            );
+
+            return;
+        }
+
+        String purchasedPlan =
+                priceIdB1Unlimited != null
+                        && priceIdB1Unlimited.equals(paidPriceId)
+                        ? SubscriptionService.PLAN_B1_UNLIMITED
+                        : SubscriptionService.PLAN_B1;
+
+        logger.info(
+                "Processing Stripe Checkout Session {} for plan {} and price {}",
+                session.getId(),
+                purchasedPlan,
+                paidPriceId
+        );
+
+        /*
+         * client_reference_id is set by the frontend to the
+         * EasyPrufung user's UUID.
+         */
+        String clientReferenceId =
+                session.getClientReferenceId();
+
+        if (clientReferenceId == null
+                || clientReferenceId.isBlank()) {
+
+            throw new IllegalStateException(
+                    "Stripe client_reference_id is missing"
+            );
+        }
+
+        User user =
+                userService.getUserByUUID(
+                        clientReferenceId
+                );
+
         if (user == null) {
-            throw new IllegalStateException("User not found for client_reference_id " + clientReferenceId);
+            throw new IllegalStateException(
+                    "User not found for client_reference_id "
+                            + clientReferenceId
+            );
         }
 
         String customerId = session.getCustomer();
         String customerEmail = user.getEmail();
 
-        if (customerId != null) {
-            Customer customer = Customer.retrieve(customerId);
-            if (customer.getEmail() != null && !customer.getEmail().isEmpty()) {
-                customerEmail = customer.getEmail();
+        /*
+         * Payment Links do not always create a Stripe Customer.
+         * Prefer the Stripe Customer email when available and
+         * otherwise fall back to Checkout customer_details.
+         */
+        if (customerId != null
+                && !customerId.isBlank()) {
+
+            Customer customer =
+                    Customer.retrieve(customerId);
+
+            if (customer.getEmail() != null
+                    && !customer.getEmail().isBlank()) {
+
+                customerEmail =
+                        customer.getEmail();
             }
-        } else if (session.getCustomerDetails() != null
-                && session.getCustomerDetails().getEmail() != null) {
-            customerEmail = session.getCustomerDetails().getEmail();
+
+        } else if (
+                session.getCustomerDetails() != null
+                        && session
+                                .getCustomerDetails()
+                                .getEmail() != null
+                        && !session
+                                .getCustomerDetails()
+                                .getEmail()
+                                .isBlank()
+        ) {
+            customerEmail =
+                    session
+                            .getCustomerDetails()
+                            .getEmail();
         }
 
-        Subscription subscription = user.getSubscription();
+        Subscription subscription =
+                user.getSubscription();
+
+        /*
+         * The Price ID is the source of truth:
+         *
+         * easyprufung.stripe.priceidb1
+         *   -> b1
+         *   -> 10 exams
+         *
+         * easyprufung.stripe.priceidb1unlimited
+         *   -> b1_unlimited
+         *   -> unlimited exams
+         *
+         * SubscriptionService also validates the Price ID,
+         * so an unknown Stripe product cannot accidentally
+         * grant EasyPrufung access.
+         */
         if (subscription == null) {
-            subscription = subscriptionService.createB1PaidSubscription(
-                    customerId,
-                    customerEmail,
-                    paidPriceId
-            );
+
+            subscription =
+                    subscriptionService
+                            .createB1PaidSubscriptionByPriceId(
+                                    customerId,
+                                    customerEmail,
+                                    paidPriceId
+                            );
+
             user.setSubscription(subscription);
             userService.updateUser(user);
+
         } else {
-            subscriptionService.activateB1PaidSubscription(
-                    subscription,
-                    customerId,
-                    customerEmail,
-                    paidPriceId
-            );
+
+            subscriptionService
+                    .activateB1PaidSubscriptionByPriceId(
+                            subscription,
+                            customerId,
+                            customerEmail,
+                            paidPriceId
+                    );
         }
 
+        logger.info(
+                "Stripe purchase fulfilled for user {} with plan {}",
+                clientReferenceId,
+                purchasedPlan
+        );
+
         userService.sendNewSubscriptionEmail(user);
+    }
+
+    private String findSupportedPriceId(
+            Session session,
+            String priceIdB1,
+            String priceIdB1Unlimited
+    ) {
+
+        for (LineItem lineItem :
+                session.getLineItems().getData()) {
+
+            if (lineItem.getPrice() == null
+                    || lineItem.getPrice().getId() == null) {
+                continue;
+            }
+
+            String priceId =
+                    lineItem.getPrice().getId();
+
+            if (priceIdB1 != null
+                    && !priceIdB1.isBlank()
+                    && priceIdB1.equals(priceId)) {
+
+                return priceId;
+            }
+
+            if (priceIdB1Unlimited != null
+                    && !priceIdB1Unlimited.isBlank()
+                    && priceIdB1Unlimited.equals(priceId)) {
+
+                return priceId;
+            }
+        }
+
+        return null;
     }
 }

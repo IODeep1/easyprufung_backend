@@ -27,7 +27,7 @@ public class SubscriptionController {
 
     /**
      * Admin helper kept for backwards compatibility with the existing endpoint.
-     * It now grants the single TELC B1 paid product instead of arbitrary plans.
+     * It now resolves the TELC B1 paid tier from the configured Stripe Price ID.
      */
     @PreAuthorize("hasAnyRole('ROLE_ADMIN')")
     @PostMapping(path = EndPoints.SUBSCRIPTION_CREATE)
@@ -43,7 +43,7 @@ public class SubscriptionController {
 
             Subscription subscription = user.getSubscription();
             if (subscription == null) {
-                subscription = subscriptionService.createB1PaidSubscription(
+                subscription = subscriptionService.createB1PaidSubscriptionByPriceId(
                         subscriptionDTO.getCustomerId(),
                         subscriptionDTO.getCustomerEmail(),
                         subscriptionDTO.getPriceId()
@@ -51,7 +51,7 @@ public class SubscriptionController {
                 user.setSubscription(subscription);
                 userService.updateUser(user);
             } else {
-                subscriptionService.activateB1PaidSubscription(
+                subscriptionService.activateB1PaidSubscriptionByPriceId(
                         subscription,
                         subscriptionDTO.getCustomerId(),
                         subscriptionDTO.getCustomerEmail(),
