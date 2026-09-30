@@ -1,10 +1,14 @@
 package com.easyprufung.backend.exam.service;
 
+import com.easyprufung.backend.User.Service.SubscriptionService;
+import com.easyprufung.backend.User.Service.UserService;
+import com.easyprufung.backend.User.User;
 import com.easyprufung.backend.exam.domain.*;
 import com.easyprufung.backend.exam.dto.*;
 import com.easyprufung.backend.exam.exception.*;
 import com.easyprufung.backend.exam.mapper.ExamViewMapper;
 import com.easyprufung.backend.exam.repository.*;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,6 +28,10 @@ public class ExamSubmissionService {
     private final JsonSupport json;
     private final ExamViewMapper mapper;
     private final Map<EvaluationMode, AnswerEvaluator> evaluators;
+    @Autowired
+    UserService userService;
+    @Autowired
+    SubscriptionService subscriptionService;
 
     public ExamSubmissionService(ExamSessionRepository sessions, UserAnswerRepository answers,
                                  ExamResultRepository results, CompactAnswerParser compactParser,
@@ -34,7 +42,7 @@ public class ExamSubmissionService {
     }
 
     @Transactional(noRollbackFor = ExpiredSessionException.class)
-    public ExamResultView submit(UUID sessionId, SubmitExamRequest request) {
+    public ExamResultView submit(String userEmail, UUID sessionId, SubmitExamRequest request) {
         ExamSession session = sessions.findDetailedById(sessionId)
                 .orElseThrow(() -> new ResourceNotFoundException("Exam session not found: " + sessionId));
         if (session.getStatus() == SessionStatus.EVALUATED) {
@@ -108,6 +116,8 @@ public class ExamSubmissionService {
         session.setSubmittedAt(Instant.now());
         session.setStatus(SessionStatus.EVALUATED);
         sessions.save(session);
+        User user = userService.getUserByEmail(userEmail);
+        subscriptionService.consumeQuota(user.getSubscription());
         return mapper.toView(results.save(examResult));
     }
 

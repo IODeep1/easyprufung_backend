@@ -1,5 +1,6 @@
 package com.easyprufung.backend.exam.api;
 
+import com.easyprufung.backend.Utils.JwtUtils;
 import com.easyprufung.backend.exam.dto.*;
 import com.easyprufung.backend.exam.service.*;
 import javax.validation.Valid;
@@ -36,8 +37,9 @@ public class ExamSessionController {
     public ExamSessionView get(@PathVariable UUID sessionId) { return queries.getSession(sessionId); }
 
     @PostMapping("/{sessionId}/submit")
-    public ExamResultView submit(@PathVariable UUID sessionId, @Valid @RequestBody SubmitExamRequest request) {
-        return submission.submit(sessionId, request);
+    public ExamResultView submit(@PathVariable UUID sessionId, @Valid @RequestBody SubmitExamRequest request, @RequestHeader("Authorization") String authorizationHeader) {
+        var httpClientConsumer = JwtUtils.getHttpClientConsumer(authorizationHeader);
+        return submission.submit(httpClientConsumer.email, sessionId, request);
     }
 
     @GetMapping
