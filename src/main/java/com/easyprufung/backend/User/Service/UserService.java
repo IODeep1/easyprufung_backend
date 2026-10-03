@@ -200,7 +200,7 @@ public class UserService {
             Email emailToSend = new Email();
             emailToSend.setFrom("contact@easyprufung.com");
             emailToSend.setTo(user.getEmail());
-            emailToSend.setSubject("Thanks for Subscribing – Let’s Build Something Amazing!");
+            emailToSend.setSubject("Your EasyPrüfung Purchase Is Confirmed");
             Map<String, Object> model = new HashMap<>();
             model.put("firstName", user.getFirstname());
             model.put("lastName",  user.getLastname());
