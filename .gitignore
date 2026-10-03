@@ -10,7 +10,7 @@ build/
 horen-examples/
 src/main/java/com/easyprufung/backend/AI/OpenAIRestConfig.java
 # Ignore Spring Boot resources
-src/main/resources/
+src/main/resources/application.properties
 
 !gradle/wrapper/gradle-wrapper.jar
 !**/src/main/**/build/

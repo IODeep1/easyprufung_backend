@@ -1,0 +1,28 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "score", "maximumScore", "criteria", "overallFeedback", "corrections", "strengths"],
+  "properties": {
+    "schemaVersion": {"type": "string", "enum": ["1.0"]},
+    "score": {"type": "number"},
+    "maximumScore": {"type": "number"},
+    "criteria": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["key", "title", "score", "maximumScore", "feedback"],
+        "properties": {
+          "key": {"type": "string"},
+          "title": {"type": "string"},
+          "score": {"type": "number"},
+          "maximumScore": {"type": "number"},
+          "feedback": {"type": "string"}
+        }
+      }
+    },
+    "overallFeedback": {"type": "string"},
+    "corrections": {"type": "array", "items": {"type": "string"}},
+    "strengths": {"type": "array", "items": {"type": "string"}}
+  }
+}

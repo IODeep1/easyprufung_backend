@@ -1,0 +1,334 @@
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+  <meta http-equiv="content-type" content="text/html; charset=utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0;">
+  <meta name="format-detection" content="telephone=no" />
+
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      min-width: 100%;
+      width: 100% !important;
+      height: 100% !important;
+    }
+
+    body,
+    table,
+    td,
+    div,
+    p,
+    a {
+      -webkit-font-smoothing: antialiased;
+      text-size-adjust: 100%;
+      -ms-text-size-adjust: 100%;
+      -webkit-text-size-adjust: 100%;
+      line-height: 100%;
+    }
+
+    table,
+    td {
+      mso-table-lspace: 0pt;
+      mso-table-rspace: 0pt;
+      border-collapse: collapse !important;
+      border-spacing: 0;
+    }
+
+    img {
+      border: 0;
+      line-height: 100%;
+      outline: none;
+      text-decoration: none;
+      -ms-interpolation-mode: bicubic;
+    }
+
+    #outlook a {
+      padding: 0;
+    }
+
+    .ReadMsgBody {
+      width: 100%;
+    }
+
+    .ExternalClass {
+      width: 100%;
+    }
+
+    .ExternalClass,
+    .ExternalClass p,
+    .ExternalClass span,
+    .ExternalClass font,
+    .ExternalClass td,
+    .ExternalClass div {
+      line-height: 100%;
+    }
+
+    @media all and (min-width: 560px) {
+      body {
+        margin-top: 30px;
+      }
+
+      .container {
+        margin-top: 20px;
+        border-radius: 8px;
+        -webkit-border-radius: 8px;
+        -moz-border-radius: 8px;
+        -khtml-border-radius: 8px;
+      }
+    }
+
+    a,
+    a:hover {
+      color: #4F46E5;
+    }
+
+    .footer a,
+    .footer a:hover {
+      color: #999999;
+    }
+  </style>
+
+  <title>Your EasyPrüfung purchase is confirmed</title>
+</head>
+
+<body
+  topmargin="0"
+  rightmargin="0"
+  bottommargin="0"
+  leftmargin="0"
+  marginwidth="0"
+  marginheight="0"
+  width="100%"
+  style="
+    border-collapse: collapse;
+    border-spacing: 0;
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    -webkit-font-smoothing: antialiased;
+    text-size-adjust: 100%;
+    -ms-text-size-adjust: 100%;
+    -webkit-text-size-adjust: 100%;
+    line-height: 100%;
+    background-color: #F0F0F0;
+    color: #000000;
+  "
+  bgcolor="#F0F0F0"
+  text="#000000"
+>
+  <table
+    width="100%"
+    align="center"
+    border="0"
+    cellpadding="0"
+    cellspacing="0"
+    style="
+      border-collapse: collapse;
+      border-spacing: 0;
+      margin: 0;
+      padding: 0;
+      width: 100%;
+    "
+  >
+    <tr>
+      <td
+        align="center"
+        valign="top"
+        bgcolor="#F0F0F0"
+        style="
+          border-collapse: collapse;
+          border-spacing: 0;
+          margin: 0;
+          padding: 0;
+        "
+      >
+
+        <table
+          border="0"
+          cellpadding="0"
+          cellspacing="0"
+          align="center"
+          bgcolor="#FFFFFF"
+          width="560"
+          style="
+            border-collapse: collapse;
+            border-spacing: 0;
+            padding: 0;
+            width: inherit;
+            max-width: 560px;
+          "
+          class="container"
+        >
+          <tr>
+            <td
+              align="left"
+              valign="top"
+              style="
+                border-collapse: collapse;
+                border-spacing: 0;
+                margin: 0;
+                padding-left: 6.25%;
+                padding-right: 6.25%;
+                padding-top: 30px;
+                padding-bottom: 30px;
+                width: 87.5%;
+                font-size: 17px;
+                font-weight: 400;
+                line-height: 160%;
+                color: #000000;
+                font-family: Arial, Helvetica, sans-serif;
+              "
+            >
+
+              Hi ${firstName},
+              <br><br>
+
+              Thank you for your purchase! 🎉
+              <br><br>
+
+              Your <span style="font-weight: bold;">EasyPrüfung</span> exam access has been successfully activated.
+              <br><br>
+
+              You can now continue preparing for
+              <span style="font-weight: bold;">TELC Deutsch B1</span>
+              with realistic exam practice and detailed feedback.
+              <br><br>
+
+              Your purchased access is valid for
+              <span style="font-weight: bold;">60 days</span>.
+              <br><br>
+
+              This was a
+              <span style="font-weight: bold;">one-time payment</span>.
+              There is no subscription and no automatic renewal.
+              <br><br>
+
+              You can always check your current access and available exams directly in your EasyPrüfung account.
+              <br><br>
+
+              <span style="font-weight: bold;">What you can do now:</span>
+              <br><br>
+
+              <span style="font-weight: bold;">1.</span>
+              Start a new TELC Deutsch B1 practice exam.
+              <br><br>
+
+              <span style="font-weight: bold;">2.</span>
+              Practice Lesen, Sprachbausteine, Hörverstehen and Schriftlicher Ausdruck under realistic exam conditions.
+              <br><br>
+
+              <span style="font-weight: bold;">3.</span>
+              Review your scores, answers, explanations and exam feedback.
+              <br><br>
+
+              <span style="font-weight: bold;">4.</span>
+              Review your previous exams and track your progress as you prepare for the real exam.
+              <br><br>
+
+              <a
+                href="https://app.easyprufung.com/new"
+                target="_blank"
+                style="
+                  display: inline-block;
+                  background-color: #000000;
+                  color: #FFFFFF;
+                  text-decoration: none;
+                  padding: 14px 24px;
+                  border-radius: 8px;
+                  font-weight: bold;
+                "
+              >
+                Start practicing
+              </a>
+
+              <br><br>
+
+              If you have any questions or experience a problem, feel free to contact us. We’ll be happy to help.
+              <br><br>
+
+              Viel Erfolg bei deiner TELC B1 Prüfung! 🇩🇪
+              <br><br>
+
+              Cheers,
+              <br>
+              Aziz from EasyPrüfung
+
+            </td>
+          </tr>
+        </table>
+
+        <table
+          border="0"
+          cellpadding="0"
+          cellspacing="0"
+          align="center"
+          width="560"
+          style="
+            border-collapse: collapse;
+            border-spacing: 0;
+            padding: 0;
+            width: inherit;
+            max-width: 560px;
+          "
+        >
+          <tr>
+            <td
+              align="center"
+              valign="top"
+              style="
+                border-collapse: collapse;
+                border-spacing: 0;
+                margin: 0;
+                padding-left: 6.25%;
+                padding-right: 6.25%;
+                width: 87.5%;
+                font-size: 13px;
+                font-weight: 400;
+                line-height: 150%;
+                padding-top: 20px;
+                padding-bottom: 20px;
+                color: #999999;
+                font-family: Arial, Helvetica, sans-serif;
+              "
+              class="footer"
+            >
+              Need help? Check out our
+              <a
+                href="https://easyprufung.com/#faq"
+                target="_blank"
+                style="
+                  text-decoration: underline;
+                  color: #999999;
+                  font-family: Arial, Helvetica, sans-serif;
+                  font-size: 13px;
+                  font-weight: 400;
+                  line-height: 150%;
+                "
+              >FAQ</a>
+
+              or contact us through our
+
+              <a
+                href="https://easyprufung.com/contact"
+                target="_blank"
+                style="
+                  text-decoration: underline;
+                  color: #999999;
+                  font-family: Arial, Helvetica, sans-serif;
+                  font-size: 13px;
+                  font-weight: 400;
+                  line-height: 150%;
+                "
+              >Contact Form</a>.
+            </td>
+          </tr>
+        </table>
+
+      </td>
+    </tr>
+  </table>
+</body>
+
+</html>

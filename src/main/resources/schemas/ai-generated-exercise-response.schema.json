@@ -1,0 +1,46 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "instructions", "content", "questions"],
+  "properties": {
+    "schemaVersion": {"type": "string", "enum": ["1.0"]},
+    "instructions": {"type": "string"},
+    "content": {"type": ["string", "null"]},
+    "questions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["number", "stimulus", "prompt", "type", "options", "correctAnswer", "maximumScore", "explanation"],
+        "properties": {
+          "number": {"type": "string"},
+          "stimulus": {
+            "type": ["string", "null"]
+          },
+          "prompt": {"type": "string"},
+          "type": {"enum": ["SINGLE_CHOICE", "MULTIPLE_CHOICE", "TRUE_FALSE", "MATCHING", "CLOZE_CHOICE", "FREE_TEXT"]},
+          "options": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["key", "text"],
+              "properties": {"key": {"type": "string"}, "text": {"type": "string"}}
+            }
+          },
+          "correctAnswer": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["acceptedOptionKeys", "acceptedTexts"],
+            "properties": {
+              "acceptedOptionKeys": {"type": "array", "items": {"type": "string"}},
+              "acceptedTexts": {"type": "array", "items": {"type": "string"}}
+            }
+          },
+          "maximumScore": {"type": "number"},
+          "explanation": {"type": ["string", "null"]}
+        }
+      }
+    }
+  }
+}
