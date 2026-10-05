@@ -163,7 +163,7 @@ public class UserService {
         Email emailToSend = new Email();
         emailToSend.setFrom("contact@easyprufung.com");
         emailToSend.setTo(email);
-        emailToSend.setSubject("Password reset for EasyPrufung.com account");
+        emailToSend.setSubject("Password reset for EasyPrüfung.com account");
         Map<String, Object> model = new HashMap<>();
         model.put("firstName", user.getFirstname());
         model.put("lastName",  user.getLastname());
@@ -181,7 +181,7 @@ public class UserService {
             Email emailToSend = new Email();
             emailToSend.setFrom("contact@easyprufung.com");
             emailToSend.setTo(user.getEmail());
-            emailToSend.setSubject("Welcome to EasyPrufung – Let’s Get Started!");
+            emailToSend.setSubject("Welcome to EasyPrüfung – Let’s Get Started!");
             Map<String, Object> model = new HashMap<>();
             model.put("firstName", user.getFirstname());
             model.put("lastName",  user.getLastname());

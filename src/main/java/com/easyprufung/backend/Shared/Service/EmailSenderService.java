@@ -33,7 +33,7 @@ public class EmailSenderService {
             MimeMessageHelper message = new MimeMessageHelper(mimeMessage,true);
             try {
                 // Set the "From" field with a display name
-                message.setFrom(InternetAddress.parse("EasyPrufung <contact@easyprufung.com>")[0]);
+                message.setFrom(InternetAddress.parse("EasyPrüfung <contact@easyprufung.com>")[0]);
             } catch (Exception e) {
                 message.setFrom(mail.getFrom());
                
