@@ -52,11 +52,11 @@ public class ExamSubmissionService {
         if (session.getStatus() != SessionStatus.IN_PROGRESS) {
             throw new ExamStateException("Session cannot be submitted in status " + session.getStatus());
         }
-        if (session.getExpiresAt() != null && Instant.now().isAfter(session.getExpiresAt())) {
+        /*if (session.getExpiresAt() != null && Instant.now().isAfter(session.getExpiresAt())) {
             session.setStatus(SessionStatus.EXPIRED);
             sessions.save(session);
             throw new ExpiredSessionException("Exam session has expired");
-        }
+        }*/
 
         Map<String, AnswerPayload> submitted = mergeAnswers(request);
         Map<String, QuestionLocation> questionByNumber = indexQuestions(session);
