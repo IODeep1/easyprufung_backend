@@ -19,12 +19,31 @@ import org.springframework.web.client.RestTemplate;
 import java.util.List;
 import java.util.Collections;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
 public class OpenAiExamAiClient implements ExamAiClient {
     private static final String JSON_SCHEMA_TYPE = "json_schema";
     private static final String OUTPUT_TEXT_TYPE = "output_text";
     private static final String REFUSAL_TYPE = "refusal";
+
+    private static final List<String> TOPIC_DOMAINS = List.of(
+            "housing and neighbourhood life", "work and everyday workplace organisation",
+            "education and lifelong learning", "health and everyday wellbeing",
+            "transport and commuting", "shopping and consumer services",
+            "family and intergenerational life", "culture and local events",
+            "sport and leisure", "environment and practical sustainability",
+            "travel and accommodation", "volunteering and community activities",
+            "everyday technology and communication", "food and cooking",
+            "public services and appointments", "friendship and social contacts");
+    private static final List<String> EMAIL_STYLES = List.of("Informal", "Semi-formal");
+
+    // Per-client, per-part rotation: concurrent calls receive distinct sequence positions.
+    // This is not persistent history; restarts and other application instances are independent.
+    private final ConcurrentMap<String, AtomicLong> generationSequences = new ConcurrentHashMap<>();
 
     private final RestTemplate restTemplate;
     private final AiProperties properties;
@@ -50,7 +69,7 @@ public class OpenAiExamAiClient implements ExamAiClient {
         validate(request, "AI generation request");
         AiGeneratedExerciseResponse response = callOpenAi(
                 "easyprufung_generated_exercise",
-                generationInstructions(),
+                generationInstructions() + generationVariation(request),
                 request,
                 schemaProvider.generatedExerciseSchema(),
                 AiGeneratedExerciseResponse.class);
@@ -200,6 +219,38 @@ public class OpenAiExamAiClient implements ExamAiClient {
         return value != null && !value.isBlank();
     }
 
+    private String generationVariation(AiExerciseGenerationRequest request) {
+        if (request.getProvider() != com.easyprufung.backend.exam.domain.ExamProvider.TELC
+                || request.getLevel() != com.easyprufung.backend.exam.domain.CefrLevel.B1) {
+            return "";
+        }
+        String sequenceKey = request.getProvider() + ":" + request.getLevel() + ":"
+                + request.getExamCode() + ":" + request.getPartKey();
+        long iteration = generationSequences.computeIfAbsent(sequenceKey,
+                        key -> new AtomicLong(ThreadLocalRandom.current().nextInt(TOPIC_DOMAINS.size())))
+                .getAndIncrement();
+        int topicIndex = Math.floorMod(iteration, TOPIC_DOMAINS.size());
+        StringBuilder variation = new StringBuilder("\n\nGENERATION VARIATION FOR THIS CALL\n");
+        variation.append("Assigned primary topic domain: ")
+                .append(TOPIC_DOMAINS.get(topicIndex)).append(".\n");
+        variation.append("Topic palette for independent texts or situations, in order: ");
+        for (int offset = 0; offset < TOPIC_DOMAINS.size(); offset++) {
+            if (offset > 0) variation.append("; ");
+            variation.append(TOPIC_DOMAINS.get((topicIndex + offset) % TOPIC_DOMAINS.size()));
+        }
+        variation.append(".\nUse this assignment within the required task genre and B1 level. ")
+                .append("For a single coherent text, stay in the primary domain. ")
+                .append("For independent texts or situations, use successive distinct palette domains. ")
+                .append("Invent a fresh concrete situation, purpose and details; changing names alone ")
+                .append("is not topic diversity. Never output the palette or rotation metadata.\n");
+        if ("SCHREIBEN_EMAIL".equals(request.getPartKey())) {
+            variation.append("Required email style for this call: ")
+                    .append(EMAIL_STYLES.get(Math.floorMod(iteration, EMAIL_STYLES.size())))
+                    .append(". Generate exactly one task in this style, not multiple alternatives.\n");
+        }
+        return variation.toString();
+    }
+
     private String generationInstructions() {
         return """
             You are a professional German-language examination item writer.
@@ -223,6 +274,29 @@ public class OpenAiExamAiClient implements ExamAiClient {
             - use plausible distractors based on common learner misunderstandings;
             - avoid both simplistic A2-only language and abstract B2/C1 language;
             - produce original content and never reproduce a published exam task.
+
+            TOPIC DIVERSITY
+            - Follow the per-call topic assignment below; topic examples in the input are
+              illustrative, not a fixed scenario to reuse.
+            - Vary the communicative purpose, setting, participants, constraints and outcome.
+              Do not repeatedly default to language courses, holidays, moving or invitations.
+            - Independent texts and situations must cover distinct everyday domains.
+              Questions about one shared text must remain coherent with that text.
+            - Never sacrifice task format, solvability or B1 calibration for novelty.
+
+            B1 DEPTH AND TASK DEMANDS
+            - Use connected, concrete texts with frequent everyday vocabulary. Unfamiliar
+              words must be understandable from context and not decide an answer alone.
+            - Use a natural mix of main clauses, subordinate and relative clauses, common
+              past tenses, modals, polite requests and occasional common passive forms.
+              Avoid dense nominal style, long nested clauses, rare idioms and technical jargon.
+            - Reading tasks must test global, detailed or selective comprehension as requested,
+              including accessible paraphrases and clear reasons, conditions or contrasts.
+            - Language gaps must test common B1 grammar and collocations in context, with a
+              varied focus; do not make most gaps test the same structure.
+            - Writing tasks must use only informal or semi-formal emails. Never generate
+              a formal email-writing task. Keep correspondence at B1 without legal,
+              bureaucratic or advanced business language.
 
             FIELD PLACEMENT
             - Put material shared by all questions in exercise content.
@@ -258,7 +332,11 @@ public class OpenAiExamAiClient implements ExamAiClient {
             5. verify that only one answer is defensible;
             6. verify all one-use-only matching constraints;
             7. verify that markers such as [21] occur exactly once;
-            8. verify that all JSON fields satisfy the supplied schema.
+            8. verify the assigned topic, diversity, B1 language and requested reading skill;
+            9. for writing, verify the required style, recipient relationship, consistent
+               register and exactly four distinct, answerable content points;
+            10. verify that all JSON fields satisfy the supplied schema, preserving the
+                existing field placement, nulls, empty arrays, types and score conventions.
 
             Return only data matching the supplied JSON Schema.
             Do not add Markdown, commentary or fields not present in the schema.
@@ -302,7 +380,10 @@ public class OpenAiExamAiClient implements ExamAiClient {
 
             COMMUNICATIVE DESIGN
             Evaluate:
-            - personal or semi-formal email conventions;
+            - informal or semi-formal email conventions as required by the task;
+            - infer the required register from the recipient relationship and source situation;
+            - informal: consistent du/ihr and a personal greeting and closing;
+            - semi-formal: polite Sie with a known contact and a suitable friendly tone;
             - recipient orientation;
             - consistent and suitable register;
             - greeting, introduction and closing;

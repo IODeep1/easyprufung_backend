@@ -5,10 +5,13 @@ import com.easyprufung.backend.exam.domain.ContentSource;
 import com.easyprufung.backend.exam.domain.EvaluationMode;
 import com.easyprufung.backend.exam.domain.ExamDefinition;
 import com.easyprufung.backend.exam.domain.ExamProvider;
+import com.easyprufung.backend.exam.domain.ExerciseTemplate;
+import com.easyprufung.backend.exam.domain.QuestionTemplate;
 import com.easyprufung.backend.exam.domain.PartDefinition;
 import com.easyprufung.backend.exam.domain.QuestionType;
 import com.easyprufung.backend.exam.domain.SectionDefinition;
 import com.easyprufung.backend.exam.repository.ExamDefinitionRepository;
+import com.easyprufung.backend.exam.repository.ExerciseTemplateRepository;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.stereotype.Component;
@@ -26,20 +29,27 @@ public class TelcB1DefinitionConfiguration implements ApplicationRunner {
      * Increase this whenever the exam definition or generation
      * instructions change.
      */
-    private static final int DEFINITION_VERSION = 1;
+    private static final int DEFINITION_VERSION = 3;
 
     private final ExamDefinitionRepository repository;
+    private final ExerciseTemplateRepository templateRepository;
 
     public TelcB1DefinitionConfiguration(
-            ExamDefinitionRepository repository
+            ExamDefinitionRepository repository,
+            ExerciseTemplateRepository templateRepository
     ) {
         this.repository = repository;
+        this.templateRepository = templateRepository;
     }
 
     @Override
     @Transactional
     public void run(ApplicationArguments args) {
         if (repository.existsByCodeAndDefinitionVersion(CODE, DEFINITION_VERSION)) return;
+        ExamDefinition previous = repository
+                .findFirstByProviderAndLevelAndCodeAndActiveTrueOrderByDefinitionVersionDesc(
+                        ExamProvider.TELC, CefrLevel.B1, CODE)
+                .orElse(null);
         ExamDefinition exam = new ExamDefinition();
         exam.setCode(CODE);
         exam.setProvider(ExamProvider.TELC);
@@ -59,6 +69,50 @@ public class TelcB1DefinitionConfiguration implements ApplicationRunner {
         addWritingSection(exam);
 
         repository.save(exam);
+        copyPredefinedTemplates(previous, exam);
+    }
+
+    // Templates belong to part IDs, so a new definition needs its own copies.
+    // Keep the old definition and templates intact for existing sessions.
+    private void copyPredefinedTemplates(ExamDefinition previous, ExamDefinition target) {
+        if (previous == null) return;
+        for (SectionDefinition section : target.getSections()) {
+            for (PartDefinition part : section.getParts()) {
+                if (part.getContentSource() == ContentSource.AI_GENERATED) continue;
+                previous.getSections().stream()
+                        .flatMap(oldSection -> oldSection.getParts().stream())
+                        .filter(oldPart -> oldPart.getPartKey().equals(part.getPartKey())
+                                && oldPart.getContentSource() == part.getContentSource())
+                        .findFirst()
+                        .ifPresent(oldPart -> templateRepository
+                                .findByPartDefinitionIdAndActiveTrueOrderByTemplateKeyAsc(oldPart.getId())
+                                .forEach(source -> {
+                                    ExerciseTemplate copy = new ExerciseTemplate();
+                                    copy.setPartDefinition(part);
+                                    copy.setTemplateKey(source.getTemplateKey());
+                                    copy.setInstructions(source.getInstructions());
+                                    copy.setContent(source.getContent());
+                                    copy.setAudioUrl(source.getAudioUrl());
+                                    copy.setAudioContentType(source.getAudioContentType());
+                                    copy.setAudioPlayLimit(source.getAudioPlayLimit());
+                                    copy.setActive(source.isActive());
+                                    for (QuestionTemplate question : source.getQuestions()) {
+                                        QuestionTemplate item = new QuestionTemplate();
+                                        item.setOrderIndex(question.getOrderIndex());
+                                        item.setExternalNumber(question.getExternalNumber());
+                                        item.setStimulus(question.getStimulus());
+                                        item.setPrompt(question.getPrompt());
+                                        item.setQuestionType(question.getQuestionType());
+                                        item.setOptionsJson(question.getOptionsJson());
+                                        item.setCorrectAnswerJson(question.getCorrectAnswerJson());
+                                        item.setMaximumScore(question.getMaximumScore());
+                                        item.setExplanation(question.getExplanation());
+                                        copy.addQuestion(item);
+                                    }
+                                    templateRepository.save(copy);
+                                }));
+            }
+        }
     }
 
     private void addReadingSection(ExamDefinition exam) {
@@ -272,6 +326,9 @@ public class TelcB1DefinitionConfiguration implements ApplicationRunner {
                 - Texts should resemble short newspaper, magazine or public-information texts.
                 - Use realistic B1 topics such as work, education, travel, health, housing,
                   family, leisure, mobility, consumer matters or everyday technology.
+                - Use five distinct topic domains from the per-call palette, one per text.
+                  Do not make all five texts variations on a single theme. Related distractor
+                  headings must still compete with their respective text's main message.
                 - Each text must have one clear main focus but may contain two or three
                   supporting details.
                 - Use natural standard German and realistic names, places, dates and prices.
@@ -323,6 +380,8 @@ public class TelcB1DefinitionConfiguration implements ApplicationRunner {
                   general-interest article.
                 - Use an everyday B1 topic such as employment, education, social projects,
                   health, mobility, environment, volunteering, housing, family or leisure.
+                - Follow the assigned primary domain and choose a fresh concrete angle.
+                  Keep one coherent article; do not combine unrelated topics just for variety.
                 - The text should contain several people, reasons, developments, conditions,
                   comparisons, dates, quantities or consequences.
                 - Give the text a natural title.
@@ -377,6 +436,9 @@ public class TelcB1DefinitionConfiguration implements ApplicationRunner {
                 - Several notices must remain unused.
 
                 SITUATIONS
+                - Cover at least five distinct topic domains from the per-call palette across
+                  the ten situations. Use varied needs and purposes, not ten versions of one
+                  course, trip or housing search. Preserve the required near-match distractors.
                 - Each situation should be approximately 20-40 words.
                 - State a realistic need and at least two relevant conditions.
                 - Conditions may involve time, location, age, price, experience, availability,
@@ -433,6 +495,8 @@ public class TelcB1DefinitionConfiguration implements ApplicationRunner {
                 - Include a realistic greeting, connected body paragraphs and closing.
                 - Use familiar topics such as a trip, course, work experience, move, invitation,
                   appointment, problem, request or personal news.
+                - Follow the assigned primary domain with a fresh purpose and situation;
+                  topic examples above are not a required or recurring storyline.
                 - The text must remain natural after all correct answers are inserted.
 
                 GRAMMAR COVERAGE
@@ -489,6 +553,8 @@ public class TelcB1DefinitionConfiguration implements ApplicationRunner {
                   when it naturally provides the reason for writing.
                 - Use realistic topics such as requesting information, accommodation, courses,
                   travel, appointments, services, complaints or event organization.
+                - Follow the assigned primary domain while keeping a coherent everyday
+                  request, enquiry or response; avoid a recurring course or travel template.
                 - Include an appropriate greeting and closing.
 
                 WORD BANK
@@ -515,8 +581,10 @@ public class TelcB1DefinitionConfiguration implements ApplicationRunner {
                 Create an original TELC Deutsch B1-style Schriftlicher Ausdruck task.
 
                 ASSESSMENT PURPOSE
-                The candidate writes one personal or semi-formal email in response to a
-                realistic communicative situation.
+                The candidate writes one informal or semi-formal email in response to a
+                realistic communicative situation. Use exactly the style assigned for this
+                call. Generate only these two styles; never generate a formal email-writing
+                task. Keep the same four-point response task and B1 demands.
 
                 REQUIRED STRUCTURE
                 - Return exactly one FREE_TEXT question numbered 61.
@@ -530,12 +598,23 @@ public class TelcB1DefinitionConfiguration implements ApplicationRunner {
 
                 SOURCE EMAIL
                 - Write approximately 80-130 words in natural German.
-                - Use a realistic personal or semi-formal sender and recipient relationship.
+                - Make the sender, recipient, relationship and purpose unambiguous and
+                  consistent with the assigned style:
+                  Informal: friends or relatives, consistent du/ihr and a personal tone.
+                  Semi-formal: a known teacher, colleague or organiser, polite Sie with a
+                  friendly, respectful tone.
+                - Do not use an unfamiliar official or institutional recipient requiring
+                  formal correspondence. Semi-formal tasks should address a known contact.
+                - Do not require legal knowledge, advanced business language or a
+                  specialist complaint procedure.
                 - The sender should provide context and ask for information, advice, a reaction
                   or help.
                 - Use a familiar B1 topic such as visiting, travel, moving, a celebration,
                   a course, work, housing, health, leisure or organizing an activity.
+                - Follow the assigned primary topic domain. Vary the purpose, relationship,
+                  practical problem and requested action rather than reusing a storyline.
                 - Include enough information for the candidate to respond naturally.
+                - Do not mix registers or provide multiple style alternatives in one task.
                 - Avoid controversial, sensitive or specialist topics.
 
                 FOUR CONTENT POINTS
@@ -552,7 +631,8 @@ public class TelcB1DefinitionConfiguration implements ApplicationRunner {
                 - address all four content points;
                 - choose a sensible order;
                 - use an appropriate subject, greeting, introduction and closing;
-                - maintain the correct personal or semi-formal register.
+                - maintain the assigned informal or semi-formal register appropriate
+                  to the source email and recipient.
 
                 B1 CALIBRATION
                 The task must be achievable in approximately 30 minutes by a B1 candidate.
