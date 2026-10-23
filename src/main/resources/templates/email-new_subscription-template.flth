@@ -89,7 +89,7 @@
     }
   </style>
 
-  <title>Your EasyPrüfung purchase is confirmed</title>
+  <title>Your SmartPrüfung purchase is confirmed</title>
 </head>
 
 <body
@@ -188,7 +188,7 @@
               Thank you for your purchase! 🎉
               <br><br>
 
-              Your <span style="font-weight: bold;">EasyPrüfung</span> exam access has been successfully activated.
+              Your <span style="font-weight: bold;">SmartPrüfung</span> exam access has been successfully activated.
               <br><br>
 
               You can now continue preparing for
@@ -205,7 +205,7 @@
               There is no subscription and no automatic renewal.
               <br><br>
 
-              You can always check your current access and available exams directly in your EasyPrüfung account.
+              You can always check your current access and available exams directly in your SmartPrüfung account.
               <br><br>
 
               <span style="font-weight: bold;">What you can do now:</span>
@@ -228,7 +228,7 @@
               <br><br>
 
               <a
-                href="https://app.easyprufung.com/new"
+                href="https://app.smartpruefung.com/new"
                 target="_blank"
                 style="
                   display: inline-block;
@@ -253,7 +253,7 @@
 
               Cheers,
               <br>
-              Aziz from EasyPrüfung
+              Aziz from SmartPrüfung
 
             </td>
           </tr>
@@ -296,7 +296,7 @@
             >
               Need help? Check out our
               <a
-                href="https://easyprufung.com/#faq"
+                href="https://smartpruefung.com/#faq"
                 target="_blank"
                 style="
                   text-decoration: underline;
@@ -311,7 +311,7 @@
               or contact us through our
 
               <a
-                href="https://easyprufung.com/contact"
+                href="https://smartpruefung.com/contact"
                 target="_blank"
                 style="
                   text-decoration: underline;

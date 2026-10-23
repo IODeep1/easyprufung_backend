@@ -1,6 +1,6 @@
 # main-backend
 
-# EasyPrüfung exam engine
+# SmartPrüfung exam engine
 
 Spring Boot backend module for configurable German mock exams. The first seeded definition is the written portion of **telc Deutsch B1**. The engine itself contains no TELC-specific branching: providers, levels, sections, parts, question types, content sources, timing, numbering, scoring, and evaluation modes are data.
 
@@ -31,8 +31,8 @@ This separation supports combinations such as an AI-generated multiple-choice ex
 ## Project structure
 
 ```text
-src/main/java/com/easyprufung/backend
-├── EasyPrufungApplication.java
+src/main/java/com/smartpruefung/backend
+├── SmartPruefungApplication.java
 └── exam
     ├── ai          # provider-neutral contract plus OpenAI Responses API adapter
     ├── api         # candidate and template-administration REST endpoints
@@ -77,8 +77,8 @@ mvn spring-boot:run
 H2 is the default development database. For PostgreSQL:
 
 ```bash
-export DB_URL='jdbc:postgresql://localhost:5432/easyprufung'
-export DB_USERNAME='easyprufung'
+export DB_URL='jdbc:postgresql://localhost:5432/smartpruefung'
+export DB_USERNAME='smartpruefung'
 export DB_PASSWORD='change-me'
 export JPA_DDL_AUTO='validate'
 ```
@@ -100,7 +100,7 @@ export OPENAI_MODEL='gpt-4o-mini'
 The matching `application.yml` settings are:
 
 ```yaml
-easyprufung:
+smartpruefung:
   ai:
     enabled: ${OPENAI_ENABLED:false}
     base-url: ${OPENAI_BASE_URL:https://api.openai.com/v1}

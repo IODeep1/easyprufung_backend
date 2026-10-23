@@ -32,6 +32,6 @@
     </root>
 
     <!-- Package-specific log levels -->
-    <logger name="com.easyprufung.backend" level="error" />
+    <logger name="com.smartpruefung.backend" level="error" />
 
 </configuration>
