@@ -57,11 +57,6 @@ public class ContactService {
                 model.put("subject",  contactDTO.getSubject());
                 template = "contact-form-template.flth";
             }
-            else {
-                emailToSend.setSubject("Pricing contact budget: "+contactDTO.getBudget());
-                model.put("budget",  contactDTO.getBudget());
-                template = "pricing-contact-form-template.flth";
-            }
             emailToSend.setModel(model);
             emailSenderService.sendEmail(emailToSend, template);
         }

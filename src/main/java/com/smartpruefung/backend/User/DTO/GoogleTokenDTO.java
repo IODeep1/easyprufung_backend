@@ -5,4 +5,5 @@ import lombok.Data;
 @Data
 public class GoogleTokenDTO {
     private String access_token;
+    private String preferredLanguage;
 }

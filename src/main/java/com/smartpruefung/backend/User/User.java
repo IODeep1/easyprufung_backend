@@ -49,6 +49,16 @@ public class User {
     @Column
     private String source;
 
+    @Column(name = "preferred_language", nullable = false, length = 2)
+    private String preferredLanguage = "en";
+
+    @Column(name = "acquisition_source", length = 32)
+    private String acquisitionSource;
+
+    // Existing accounts are considered onboarded. createUser explicitly sets false.
+    @Column(name = "acquisition_onboarding_completed", nullable = false)
+    private boolean acquisitionOnboardingCompleted = true;
+
     @Column(name = "created_date")
     private Timestamp createdDate;
 

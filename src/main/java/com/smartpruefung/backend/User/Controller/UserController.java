@@ -64,6 +64,7 @@ public class UserController {
                 userDTO.setFirstname(firstName);
                 userDTO.setLastname(lastName);
                 userDTO.setSource("google");
+                userDTO.setPreferredLanguage(googleTokenDTO.getPreferredLanguage());
                 userDTO.setPassword(JwtUtils.GOOGLE_SECRET_KEY);
                 String ipAddress = "";
                 try {
@@ -92,6 +93,8 @@ public class UserController {
                 throw new ResponseStatusException(
                         HttpStatus.UNAUTHORIZED, "INVALID_CRIDENTIALS");
             }
+        }catch (IllegalArgumentException exc) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, exc.getMessage(), exc);
         }catch (RuntimeException exc) {
             logger.error(exc.getMessage());
             throw new ResponseStatusException(

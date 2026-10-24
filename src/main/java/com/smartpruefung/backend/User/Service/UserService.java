@@ -38,6 +38,9 @@ public class UserService {
 
     //Methods
     public User createUser(UserDTO userDTO, String ipAddress) {
+        // Validate before the existing creation error handler; invalid preferences
+        // must not result in an account with silently changed preferences.
+        String preferredLanguage = UserPreferences.language(userDTO.getPreferredLanguage());
         try {
             if(!Parser.validatePassword(userDTO.getPassword())){
                 throw new ResponseStatusException(
@@ -59,6 +62,9 @@ public class UserService {
             userDTO.setUpdatedDate(new Timestamp(date.getTime()));
             userDTO.setPassword(AESEncryption.encrypt(userDTO.getPassword()));
             User user = modelMapper.map(userDTO, User.class);
+            user.setPreferredLanguage(preferredLanguage);
+            user.setAcquisitionSource(null);
+            user.setAcquisitionOnboardingCompleted(false);
             sendWelcomeEmail(user);
             //mixpanelService.IdentifyUsers(user, ipAddress);
             user = usersRepository.save(user);
@@ -75,6 +81,17 @@ public class UserService {
     public UserDTO updateUser(UserDTO userDTO) {
         var savedUser = getUserByEmail(userDTO.getEmail());
         if(savedUser != null){
+            // Validate the entire preference update before mutating the entity.
+            String language = userDTO.getPreferredLanguage() == null ? null
+                    : UserPreferences.language(userDTO.getPreferredLanguage());
+            String acquisitionSource = userDTO.getAcquisitionSource() == null ? null
+                    : UserPreferences.acquisitionSource(userDTO.getAcquisitionSource());
+            if (language != null) savedUser.setPreferredLanguage(language);
+            if (acquisitionSource != null) {
+                savedUser.setAcquisitionSource(acquisitionSource);
+                savedUser.setAcquisitionOnboardingCompleted(true);
+            }
+            // Ignore the client-supplied completion flag; a valid answer is required.
             Date date = new Date();
             savedUser.setUpdatedDate(new Timestamp(date.getTime()));
             if(StringUtils.hasText(userDTO.getFirstname()))
@@ -220,6 +237,7 @@ public class UserService {
             ModelMapper modelMapper = new ModelMapper();
             userDTO = modelMapper.map(user, UserDTO.class);
             userDTO.setPassword("");
+            userDTO.setPreferredLanguage(UserPreferences.language(user.getPreferredLanguage()));
         }
         catch (Exception exc) {
             logger.error(exc.getMessage());

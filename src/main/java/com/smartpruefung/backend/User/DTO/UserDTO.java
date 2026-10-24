@@ -18,6 +18,9 @@ public class UserDTO {
     private String resetPasswordToken;
     private Timestamp resetPasswordTokenCreationDate;
     private String source;
+    private String preferredLanguage;
+    private String acquisitionSource;
+    private boolean acquisitionOnboardingCompleted;
     private Subscription subscription;
     private Timestamp createdDate;
     private Timestamp updatedDate;
