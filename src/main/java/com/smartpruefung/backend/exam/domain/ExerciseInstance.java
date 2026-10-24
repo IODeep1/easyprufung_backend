@@ -9,13 +9,21 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Table(name = "exercise_instances")
+@Table(name = "exercise_instances", indexes = {
+        @Index(name = "idx_exercise_pool", columnList = "pool_key"),
+        @Index(name = "idx_exercise_legacy", columnList = "part_definition_id,pool_key")
+})
 @Getter @Setter @NoArgsConstructor
 public class ExerciseInstance extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     private ExamSession examSession;
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     private PartDefinition partDefinition;
+    // Scalar provenance survives independently of mutable templates and pool maintenance.
+    @Column(name = "pool_key", length = 64)
+    private String poolKey;
+    @Column(name = "content_key", length = 64)
+    private String contentKey;
     @Column(nullable = false)
     private int orderIndex;
     @Lob @Column(nullable = false)

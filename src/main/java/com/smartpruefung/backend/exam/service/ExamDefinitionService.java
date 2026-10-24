@@ -33,9 +33,9 @@ public class ExamDefinitionService {
                 .orElseThrow(() -> new ResourceNotFoundException("No active exam definition matches the request"));
 
         /*
-         * Generation intentionally runs outside a database transaction while
-         * waiting for OpenAI. Initialize the small definition graph here so it
-         * remains safely readable after this read-only transaction ends.
+         * Initialize the small definition graph for callers and AI workers.
+         * Exam starts join the surrounding selection transaction; workers only
+         * read already initialized definition fields.
          */
         definition.getSections().forEach(
                 section -> section.getParts().size()

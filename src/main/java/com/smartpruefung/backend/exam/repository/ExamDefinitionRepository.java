@@ -8,6 +8,11 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface ExamDefinitionRepository extends JpaRepository<ExamDefinition, UUID> {
+    // One cross-process lock covers selection, generation and session/history commit.
+    @org.springframework.data.jpa.repository.Lock(javax.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @org.springframework.data.jpa.repository.Query("select d from ExamDefinition d where d.id = :id")
+    Optional<ExamDefinition> lockForStart(@org.springframework.data.repository.query.Param("id") UUID id);
+
     Optional<ExamDefinition> findFirstByProviderAndLevelAndCodeAndActiveTrueOrderByDefinitionVersionDesc(
             ExamProvider provider, CefrLevel level, String code);
 

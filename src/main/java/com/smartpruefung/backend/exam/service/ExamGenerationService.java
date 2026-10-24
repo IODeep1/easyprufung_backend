@@ -17,7 +17,8 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.Executor;
-import java.util.concurrent.ThreadLocalRandom;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.annotation.Isolation;
 import java.util.stream.Collectors;
 
 @Service
@@ -31,6 +32,11 @@ public class ExamGenerationService {
     private final JsonSupport json;
     private final ExamViewMapper mapper;
     private final Executor generationExecutor;
+    private final ExamDefinitionRepository definitions;
+    private final SharedExerciseRepository pool;
+    private final ExerciseInstanceRepository instances;
+    private final SharedExerciseStore poolStore;
+    private final ExerciseFingerprint fingerprint;
 
     public ExamGenerationService(ExamDefinitionService definitionService,
                                  ExerciseTemplateRepository templateRepository,
@@ -38,7 +44,12 @@ public class ExamGenerationService {
                                  ExamAiClient aiClient,
                                  JsonSupport json,
                                  ExamViewMapper mapper,
-                                 @Qualifier("examGenerationExecutor") Executor generationExecutor) {
+                                 @Qualifier("examGenerationExecutor") Executor generationExecutor,
+                                 ExamDefinitionRepository definitions,
+                                 SharedExerciseRepository pool,
+                                 ExerciseInstanceRepository instances,
+                                 SharedExerciseStore poolStore,
+                                 ExerciseFingerprint fingerprint) {
         this.definitionService = definitionService;
         this.templateRepository = templateRepository;
         this.sessionRepository = sessionRepository;
@@ -46,107 +57,145 @@ public class ExamGenerationService {
         this.json = json;
         this.mapper = mapper;
         this.generationExecutor = generationExecutor;
+        this.definitions = definitions;
+        this.pool = pool;
+        this.instances = instances;
+        this.poolStore = poolStore;
+        this.fingerprint = fingerprint;
     }
 
+    @Transactional(isolation = Isolation.READ_COMMITTED)
     public ExamSessionView start(StartExamRequest request) {
+        if (request.getUserId() == null || request.getUserId().isBlank()) {
+            throw new IllegalArgumentException("userId is required");
+        }
         Instant requestStartedAt = Instant.now();
         ExamDefinition definition = definitionService.resolve(request);
+        definitions.lockForStart(definition.getId()).orElseThrow(() ->
+                new ExamConfigurationException("Exam definition disappeared during start"));
         validateDefinition(definition);
 
         List<PartDefinition> parts = orderedParts(definition);
-        Map<UUID, CompletableFuture<AiGeneratedExerciseResponse>> aiResponses =
-                startAiGeneration(definition, parts);
+        Map<UUID, CompletableFuture<SharedExercise>> aiResponses =
+                startAiGeneration(definition, parts, request.getUserId());
 
-        ExamSession session = new ExamSession();
-        session.setUserId(request.getUserId());
-        session.setExamDefinition(definition);
-        session.setDefinitionVersion(definition.getDefinitionVersion());
-        session.setStatus(SessionStatus.IN_PROGRESS);
-        session.setCreatedAt(requestStartedAt);
+        try {
+            ExamSession session = new ExamSession();
+            session.setUserId(request.getUserId());
+            session.setExamDefinition(definition);
+            session.setDefinitionVersion(definition.getDefinitionVersion());
+            session.setStatus(SessionStatus.IN_PROGRESS);
+            session.setCreatedAt(requestStartedAt);
 
-        Map<String, Integer> timingGroups = new HashMap<>();
-        for (SectionDefinition section : definition.getSections()) {
-            if (section.getDurationSeconds() != null) {
-                String group = section.getTimingGroup() == null ? section.getSectionKey() : section.getTimingGroup();
-                timingGroups.merge(group, section.getDurationSeconds(), Math::max);
+            Map<String, Integer> timingGroups = new HashMap<>();
+            for (SectionDefinition section : definition.getSections()) {
+                if (section.getDurationSeconds() != null) {
+                    String group = section.getTimingGroup() == null ? section.getSectionKey() : section.getTimingGroup();
+                    timingGroups.merge(group, section.getDurationSeconds(), Math::max);
+                }
             }
-        }
-        int duration = timingGroups.values().stream().mapToInt(Integer::intValue).sum();
+            int duration = timingGroups.values().stream().mapToInt(Integer::intValue).sum();
 
-        int order = 0;
-        for (PartDefinition part : parts) {
-            ExerciseInstance exercise;
+            int order = 0;
+            for (PartDefinition part : parts) {
+                ExerciseInstance exercise;
 
-            switch (part.getContentSource()) {
-                case AI_GENERATED:
-                    exercise = fromAi(
-                            part,
-                            awaitAiResponse(part, aiResponses.get(part.getId()))
-                    );
-                    break;
+                switch (part.getContentSource()) {
+                    case AI_GENERATED:
+                        SharedExercise shared = awaitAiResponse(part, aiResponses.get(part.getId()));
+                        exercise = fromAi(part, json.read(shared.getPayload(), AiGeneratedExerciseResponse.class));
+                        exercise.setPoolKey(shared.getPoolKey());
+                        exercise.setContentKey(shared.getContentKey());
+                        break;
 
-                case PREDEFINED:
-                case AUDIO_PREDEFINED:
-                    exercise = fromTemplate(part);
-                    break;
+                    case PREDEFINED:
+                    case AUDIO_PREDEFINED:
+                        exercise = selectTemplate(definition, part, request.getUserId());
+                        break;
 
-                default:
-                    throw new IllegalArgumentException(
-                            "Unsupported content source: " + part.getContentSource()
-                    );
+                    default:
+                        throw new IllegalArgumentException(
+                                "Unsupported content source: " + part.getContentSource()
+                        );
+                }
+
+                exercise.setOrderIndex(order++);
+                session.addExercise(exercise);
             }
 
-            exercise.setOrderIndex(order++);
-            session.addExercise(exercise);
+            // Generation and pool lookup never reduce the candidate's exam duration.
+            Instant examStartedAt = Instant.now();
+            session.setStartedAt(examStartedAt);
+            session.setExpiresAt(
+                    duration > 0 ? examStartedAt.plusSeconds(duration) : null
+            );
+
+            ExamSession saved = sessionRepository.save(session);
+
+            log.info(
+                    "Created exam session {} with {} parts in {} ms",
+                    saved.getId(),
+                    saved.getExercises().size(),
+                    Duration.between(requestStartedAt, Instant.now()).toMillis()
+            );
+
+            return mapper.toView(saved);
+        } finally {
+            awaitAll(aiResponses);
         }
-
-        /*
-         * The candidate's exam time starts only after every exercise is ready.
-         * AI generation time must never reduce the available exam duration.
-         */
-        Instant examStartedAt = Instant.now();
-        session.setStartedAt(examStartedAt);
-        session.setExpiresAt(
-                duration > 0 ? examStartedAt.plusSeconds(duration) : null
-        );
-
-        ExamSession saved = sessionRepository.save(session);
-
-        log.info(
-                "Created exam session {} with {} parts in {} ms",
-                saved.getId(),
-                saved.getExercises().size(),
-                Duration.between(requestStartedAt, Instant.now()).toMillis()
-        );
-
-        return mapper.toView(saved);
     }
 
-    private Map<UUID, CompletableFuture<AiGeneratedExerciseResponse>> startAiGeneration(
-            ExamDefinition definition,
-            List<PartDefinition> parts
-    ) {
-        Map<UUID, CompletableFuture<AiGeneratedExerciseResponse>> responses =
-                new HashMap<>();
+    private void awaitAll(Map<UUID, CompletableFuture<SharedExercise>> responses) {
+        // Keep the definition lock until workers have published every valid result,
+        // including when a different part failed. Never mask the original exception.
+        responses.values().forEach(future -> future.handle((value, failure) -> null).join());
+    }
 
-        for (PartDefinition part : parts) {
-            if (part.getContentSource() != ContentSource.AI_GENERATED) {
-                continue;
+    private Map<UUID, CompletableFuture<SharedExercise>> startAiGeneration(
+            ExamDefinition definition, List<PartDefinition> parts, String userId) {
+        Map<UUID, CompletableFuture<SharedExercise>> responses = new HashMap<>();
+        try {
+            for (PartDefinition part : parts) {
+                if (part.getContentSource() != ContentSource.AI_GENERATED) continue;
+                AiExerciseGenerationRequest request = createAiRequest(definition, part);
+                String poolKey = fingerprint.pool(request, definition.getDefinitionVersion(), part.getContentSource());
+
+                // Adopt historical AI exercises without making another API call.
+                for (ExerciseInstance old : instances.findByPartDefinitionIdAndPoolKeyIsNull(part.getId())) {
+                    validateExercise(part, old);
+                    SharedExercise shared = poolStore.save(poolKey, fingerprint.snapshot(old));
+                    old.setPoolKey(poolKey);
+                    old.setContentKey(shared.getContentKey());
+                }
+                Set<String> used = new HashSet<>();
+                for (ExerciseInstance old : instances.history(userId, poolKey, part.getId())) {
+                    used.addAll(fingerprint.questions(fingerprint.snapshot(old)));
+                }
+                List<SharedExercise> available = pool.findByPoolKey(poolKey).stream()
+                        .filter(entry -> Collections.disjoint(used, fingerprint.questions(
+                                json.read(entry.getPayload(), AiGeneratedExerciseResponse.class))))
+                        .collect(Collectors.toList());
+                if (!available.isEmpty()) {
+                    Collections.shuffle(available);
+                    responses.put(part.getId(), CompletableFuture.completedFuture(available.get(0)));
+                } else {
+                    responses.put(part.getId(), CompletableFuture.supplyAsync(() -> {
+                        // A provider can return a duplicate. Never silently deliver a seen question.
+                        for (int attempt = 0; attempt < 3; attempt++) {
+                            AiGeneratedExerciseResponse generated = generatePart(part.getPartKey(), request);
+                            fromAi(part, generated); // validate before publishing to the shared pool
+                            SharedExercise shared = poolStore.save(poolKey, generated);
+                            if (Collections.disjoint(used, fingerprint.questions(generated))) return shared;
+                        }
+                        throw new AiIntegrationException("AI repeatedly returned previously used questions for part "
+                                + part.getPartKey());
+                    }, generationExecutor));
+                }
             }
-
-            AiExerciseGenerationRequest aiRequest =
-                    createAiRequest(definition, part);
-            String partKey = part.getPartKey();
-
-            responses.put(
-                    part.getId(),
-                    CompletableFuture.supplyAsync(
-                            () -> generatePart(partKey, aiRequest),
-                            generationExecutor
-                    )
-            );
+        } catch (RuntimeException failure) {
+            awaitAll(responses);
+            throw failure;
         }
-
         return responses;
     }
 
@@ -167,9 +216,9 @@ public class ExamGenerationService {
         }
     }
 
-    private AiGeneratedExerciseResponse awaitAiResponse(
+    private SharedExercise awaitAiResponse(
             PartDefinition part,
-            CompletableFuture<AiGeneratedExerciseResponse> future
+            CompletableFuture<SharedExercise> future
     ) {
         if (future == null) {
             throw new ExamConfigurationException(
@@ -215,13 +264,37 @@ public class ExamGenerationService {
         );
     }
 
-    private ExerciseInstance fromTemplate(PartDefinition part) {
+    private ExerciseInstance selectTemplate(ExamDefinition definition, PartDefinition part, String userId) {
         List<ExerciseTemplate> templates = templateRepository
                 .findByPartDefinitionIdAndActiveTrueOrderByTemplateKeyAsc(part.getId());
         if (templates.isEmpty()) {
             throw new ExamConfigurationException("No active predefined template for part " + part.getPartKey());
         }
-        ExerciseTemplate source = templates.get(ThreadLocalRandom.current().nextInt(templates.size()));
+        // Include level, provider, version and requirements in the independent listening scope.
+        String poolKey = fingerprint.pool(createAiRequest(definition, part), definition.getDefinitionVersion(), part.getContentSource());
+        Map<String, Long> counts = new HashMap<>();
+        for (ExerciseInstance old : instances.history(userId, poolKey, part.getId())) {
+            String key = old.getContentKey() == null ? fingerprint.listening(old) : old.getContentKey();
+            counts.merge(key, 1L, Long::sum);
+        }
+        // Identical templates are one pool item, even if imported under different template IDs.
+        Map<String, ExerciseInstance> candidates = new HashMap<>();
+        for (ExerciseTemplate template : templates) {
+            ExerciseInstance exercise = fromTemplate(part, template);
+            String key = fingerprint.listening(exercise);
+            exercise.setPoolKey(poolKey);
+            exercise.setContentKey(key);
+            candidates.putIfAbsent(key, exercise);
+        }
+        long minimum = candidates.keySet().stream().mapToLong(key -> counts.getOrDefault(key, 0L)).min().orElse(0L);
+        List<ExerciseInstance> available = candidates.entrySet().stream()
+                .filter(entry -> counts.getOrDefault(entry.getKey(), 0L) == minimum)
+                .map(Map.Entry::getValue).collect(Collectors.toList());
+        Collections.shuffle(available);
+        return available.get(0);
+    }
+
+    private ExerciseInstance fromTemplate(PartDefinition part, ExerciseTemplate source) {
         if (part.getContentSource() == ContentSource.AUDIO_PREDEFINED
                 && (source.getAudioUrl() == null || source.getAudioUrl().isBlank())) {
             throw new ExamConfigurationException("Audio template has no audioUrl: " + source.getTemplateKey());
@@ -274,6 +347,9 @@ public class ExamGenerationService {
             exercise.addQuestion(question);
         }
         validateExercise(part, exercise);
+        if (fingerprint.questions(generated).size() != generated.getQuestions().size()) {
+            throw new ExamConfigurationException("AI exercise contains duplicate questions for part " + part.getPartKey());
+        }
         return exercise;
     }
 
