@@ -26,6 +26,7 @@ import java.util.*;
 @Service
 public class UserService {
     private static final long EXPIRE_TOKEN=1440;
+    private final EmailLocalization emailLocalization = new EmailLocalization();
     private static final Logger logger = LoggerFactory.getLogger(UserService.class);
     @Autowired
     UsersRepository usersRepository;
@@ -180,15 +181,16 @@ public class UserService {
         Email emailToSend = new Email();
         emailToSend.setFrom("contact@smartpruefung.com");
         emailToSend.setTo(email);
-        emailToSend.setSubject("Password reset for SmartPrüfung.com account");
+        EmailLocalization.Selection localizedEmail = emailLocalization.resolve(EmailLocalization.Kind.PASSWORD_RESET, user.getPreferredLanguage());
+        emailToSend.setSubject(localizedEmail.getSubject());
         Map<String, Object> model = new HashMap<>();
         model.put("firstName", user.getFirstname());
         model.put("lastName",  user.getLastname());
         String resetLink = ServletUriComponentsBuilder.fromCurrentContextPath().build().toUriString() +"/reset_password?token="+ user.getResetPasswordToken();
         resetLink = resetLink.replace("http://", "https://");
-        model.put("resetLink", resetLink);
+        model.put("resetLink", resetLink + "&lang=" + localizedEmail.getLanguage());
         emailToSend.setModel(model);
-        emailSenderService.sendEmail(emailToSend, "email-reset-password-template.flth");
+        emailSenderService.sendEmail(emailToSend, localizedEmail.getTemplate());
         return "Email sent";
     }
 
@@ -198,13 +200,14 @@ public class UserService {
             Email emailToSend = new Email();
             emailToSend.setFrom("contact@smartpruefung.com");
             emailToSend.setTo(user.getEmail());
-            emailToSend.setSubject("Welcome to SmartPrüfung – Let’s Get Started!");
+            EmailLocalization.Selection localizedEmail = emailLocalization.resolve(EmailLocalization.Kind.WELCOME, user.getPreferredLanguage());
+            emailToSend.setSubject(localizedEmail.getSubject());
             Map<String, Object> model = new HashMap<>();
             model.put("firstName", user.getFirstname());
             model.put("lastName",  user.getLastname());
 
             emailToSend.setModel(model);
-            emailSenderService.sendEmail(emailToSend, "email-welcome-template.flth");
+            emailSenderService.sendEmail(emailToSend, localizedEmail.getTemplate());
         }
         catch (Exception exc) {
             logger.error(exc.getMessage());
@@ -217,13 +220,14 @@ public class UserService {
             Email emailToSend = new Email();
             emailToSend.setFrom("contact@smartpruefung.com");
             emailToSend.setTo(user.getEmail());
-            emailToSend.setSubject("Your SmartPrüfung Purchase Is Confirmed");
+            EmailLocalization.Selection localizedEmail = emailLocalization.resolve(EmailLocalization.Kind.PURCHASE, user.getPreferredLanguage());
+            emailToSend.setSubject(localizedEmail.getSubject());
             Map<String, Object> model = new HashMap<>();
             model.put("firstName", user.getFirstname());
             model.put("lastName",  user.getLastname());
 
             emailToSend.setModel(model);
-            emailSenderService.sendEmail(emailToSend, "email-new_subscription-template.flth");
+            emailSenderService.sendEmail(emailToSend, localizedEmail.getTemplate());
         }
         catch (Exception exc) {
             logger.error(exc.getMessage());

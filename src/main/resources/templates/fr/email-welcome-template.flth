@@ -1,0 +1,236 @@
+<#ftl output_format="HTML" auto_esc=true>
+<html lang="fr" dir="ltr" xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+  <meta http-equiv="content-type" content="text/html; charset=utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0;">
+  <meta name="format-detection" content="telephone=no" />
+
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      min-width: 100%;
+      width: 100% !important;
+      height: 100% !important;
+    }
+
+    body,
+    table,
+    td,
+    div,
+    p,
+    a {
+      -webkit-font-smoothing: antialiased;
+      text-size-adjust: 100%;
+      -ms-text-size-adjust: 100%;
+      -webkit-text-size-adjust: 100%;
+      line-height: 100%;
+    }
+
+    table,
+    td {
+      mso-table-lspace: 0pt;
+      mso-table-rspace: 0pt;
+      border-collapse: collapse !important;
+      border-spacing: 0;
+    }
+
+    img {
+      border: 0;
+      line-height: 100%;
+      outline: none;
+      text-decoration: none;
+      -ms-interpolation-mode: bicubic;
+    }
+
+    #outlook a {
+      padding: 0;
+    }
+
+    .ReadMsgBody {
+      width: 100%;
+    }
+
+    .ExternalClass {
+      width: 100%;
+    }
+
+    .ExternalClass,
+    .ExternalClass p,
+    .ExternalClass span,
+    .ExternalClass font,
+    .ExternalClass td,
+    .ExternalClass div {
+      line-height: 100%;
+    }
+
+    @media all and (min-width: 560px) {
+      body {
+        margin-top: 30px;
+      }
+
+      .container {
+        margin-top: 20px;
+        border-radius: 8px;
+        -webkit-border-radius: 8px;
+        -moz-border-radius: 8px;
+        -khtml-border-radius: 8px;
+      }
+    }
+
+    a,
+    a:hover {
+      color: #4F46E5;
+    }
+
+    .footer a,
+    .footer a:hover {
+      color: #999999;
+    }
+  </style>
+
+  <title>Bienvenue sur SmartPrüfung – c’est parti !</title>
+</head>
+
+<body dir="ltr"
+  topmargin="0"
+  rightmargin="0"
+  bottommargin="0"
+  leftmargin="0"
+  marginwidth="0"
+  marginheight="0"
+  width="100%"
+  style="
+    border-collapse: collapse;
+    border-spacing: 0;
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    -webkit-font-smoothing: antialiased;
+    text-size-adjust: 100%;
+    -ms-text-size-adjust: 100%;
+    -webkit-text-size-adjust: 100%;
+    line-height: 100%;
+    background-color: #F0F0F0;
+    color: #000000;
+  "
+  bgcolor="#F0F0F0"
+  text="#000000"
+>
+  <table
+    width="100%"
+    align="center"
+    border="0"
+    cellpadding="0"
+    cellspacing="0"
+    style="
+      border-collapse: collapse;
+      border-spacing: 0;
+      margin: 0;
+      padding: 0;
+      width: 100%;
+    "
+  >
+    <tr>
+      <td
+        align="center"
+        valign="top"
+        bgcolor="#F0F0F0"
+        style="
+          border-collapse: collapse;
+          border-spacing: 0;
+          margin: 0;
+          padding: 0;
+        "
+      >
+
+        <table
+          border="0"
+          cellpadding="0"
+          cellspacing="0"
+          align="center"
+          bgcolor="#FFFFFF"
+          width="560"
+          style="
+            border-collapse: collapse;
+            border-spacing: 0;
+            padding: 0;
+            width: inherit;
+            max-width: 560px;
+          "
+          class="container"
+        >
+          <tr>
+            <td
+              align="left"
+              valign="top"
+              style="
+                border-collapse: collapse;
+                border-spacing: 0;
+                margin: 0;
+                padding-left: 6.25%;
+                padding-right: 6.25%;
+                padding-top: 30px;
+                padding-bottom: 30px;
+                width: 87.5%;
+                font-size: 17px;
+                font-weight: 400;
+                line-height: 160%;
+                color: #000000;
+                font-family: Arial, Helvetica, sans-serif;
+              "
+            >
+
+<p style="margin: 0 0 20px; line-height: 160%;">Bonjour ${(firstName!'')},</p><p style="margin: 0 0 20px; line-height: 160%;">Bienvenue sur <strong>SmartPrüfung</strong> ! 🎉</p><p style="margin: 0 0 20px; line-height: 160%;">Nous sommes heureux de vous accueillir. SmartPrüfung vous aide à préparer les examens d’allemand dans un environnement numérique réaliste. Entraînez-vous dans des conditions proches de l’examen, consultez vos résultats, comprenez vos erreurs et gagnez en confiance avant le vrai examen.</p><p style="margin: 0 0 20px; line-height: 160%;">Vous pouvez actuellement préparer le <strong>TELC Deutsch B1</strong>, notamment :</p><p style="margin: 0 0 20px; line-height: 160%;">• Compréhension écrite (Leseverstehen)<br>• Éléments linguistiques (Sprachbausteine)<br>• Compréhension orale (Hörverstehen)<br>• Expression écrite (Schriftlicher Ausdruck)</p><p style="margin: 0 0 20px; line-height: 160%;"><strong>Votre compte comprend 1 examen gratuit</strong>, pour essayer SmartPrüfung avant tout achat.</p><p style="margin: 0 0 20px; line-height: 160%;"><strong>Voici comment commencer :</strong></p><p style="margin: 0 0 20px; line-height: 160%;">1. Connectez-vous à votre <a href="https://app.smartpruefung.com/?lang=fr" target="_blank" style="color: #4F46E5; text-decoration: underline;">compte SmartPrüfung</a>.</p><p style="margin: 0 0 20px; line-height: 160%;">2. Choisissez <strong>TELC Deutsch B1</strong> et commencez votre examen blanc gratuit.</p><p style="margin: 0 0 20px; line-height: 160%;">3. Après l’examen, consultez votre score pour voir où vous en êtes par rapport à votre objectif.</p><p style="margin: 0 0 20px; line-height: 160%;">Pour continuer à vous entraîner, vous avez le choix entre :</p><p style="margin: 0 0 20px; line-height: 160%;"><strong>10 examens — 9,99 €</strong><br>10 examens blancs TELC B1 supplémentaires.</p><p style="margin: 0 0 20px; line-height: 160%;"><strong>Examens illimités — 29,99 €</strong><br>Un entraînement TELC B1 sans limite d’examens pendant votre période d’accès.</p><p style="margin: 0 0 20px; line-height: 160%;">Les deux offres sont des paiements uniques, sans renouvellement automatique.</p><p style="margin: 0 0 20px; line-height: 160%;">Découvrez vos options ici :</p><p style="margin: 0 0 20px; line-height: 160%;"><a href="https://app.smartpruefung.com/pricing?lang=fr" target="_blank" style="color: #4F46E5; text-decoration: underline;">Voir les offres SmartPrüfung</a></p><p style="margin: 0 0 20px; line-height: 160%;">Si vous avez des questions ou rencontrez un problème, contactez-nous. Nous serons ravis de vous aider.</p><p style="margin: 0 0 20px; line-height: 160%;">Bonne chance pour votre examen ! 🇩🇪</p><p style="margin: 0 0 20px; line-height: 160%;">À bientôt,<br>Aziz de SmartPrüfung</p>
+            </td>
+          </tr>
+        </table>
+
+        <table
+          border="0"
+          cellpadding="0"
+          cellspacing="0"
+          align="center"
+          width="560"
+          style="
+            border-collapse: collapse;
+            border-spacing: 0;
+            padding: 0;
+            width: inherit;
+            max-width: 560px;
+          "
+        >
+          <tr>
+            <td
+              align="center"
+              valign="top"
+              style="
+                border-collapse: collapse;
+                border-spacing: 0;
+                margin: 0;
+                padding-left: 6.25%;
+                padding-right: 6.25%;
+                width: 87.5%;
+                font-size: 13px;
+                font-weight: 400;
+                line-height: 150%;
+                padding-top: 20px;
+                padding-bottom: 20px;
+                color: #999999;
+                font-family: Arial, Helvetica, sans-serif;
+              "
+              class="footer"
+            >
+Besoin d’aide ? Consultez notre <a href="https://smartpruefung.com/fr/#faq" target="_blank" style="color: #4F46E5; text-decoration: underline;">FAQ</a> ou contactez-nous via notre <a href="https://smartpruefung.com/fr/contact" target="_blank" style="color: #4F46E5; text-decoration: underline;">formulaire de contact</a>.
+            </td>
+          </tr>
+        </table>
+
+      </td>
+    </tr>
+  </table>
+</body>
+
+</html>

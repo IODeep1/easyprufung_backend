@@ -1,0 +1,236 @@
+<#ftl output_format="HTML" auto_esc=true>
+<html lang="ar" dir="rtl" xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+  <meta http-equiv="content-type" content="text/html; charset=utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0;">
+  <meta name="format-detection" content="telephone=no" />
+
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      min-width: 100%;
+      width: 100% !important;
+      height: 100% !important;
+    }
+
+    body,
+    table,
+    td,
+    div,
+    p,
+    a {
+      -webkit-font-smoothing: antialiased;
+      text-size-adjust: 100%;
+      -ms-text-size-adjust: 100%;
+      -webkit-text-size-adjust: 100%;
+      line-height: 100%;
+    }
+
+    table,
+    td {
+      mso-table-lspace: 0pt;
+      mso-table-rspace: 0pt;
+      border-collapse: collapse !important;
+      border-spacing: 0;
+    }
+
+    img {
+      border: 0;
+      line-height: 100%;
+      outline: none;
+      text-decoration: none;
+      -ms-interpolation-mode: bicubic;
+    }
+
+    #outlook a {
+      padding: 0;
+    }
+
+    .ReadMsgBody {
+      width: 100%;
+    }
+
+    .ExternalClass {
+      width: 100%;
+    }
+
+    .ExternalClass,
+    .ExternalClass p,
+    .ExternalClass span,
+    .ExternalClass font,
+    .ExternalClass td,
+    .ExternalClass div {
+      line-height: 100%;
+    }
+
+    @media all and (min-width: 560px) {
+      body {
+        margin-top: 30px;
+      }
+
+      .container {
+        margin-top: 20px;
+        border-radius: 8px;
+        -webkit-border-radius: 8px;
+        -moz-border-radius: 8px;
+        -khtml-border-radius: 8px;
+      }
+    }
+
+    a,
+    a:hover {
+      color: #4F46E5;
+    }
+
+    .footer a,
+    .footer a:hover {
+      color: #999999;
+    }
+  </style>
+
+  <title>مرحباً بك في SmartPrüfung – لنبدأ!</title>
+</head>
+
+<body dir="rtl"
+  topmargin="0"
+  rightmargin="0"
+  bottommargin="0"
+  leftmargin="0"
+  marginwidth="0"
+  marginheight="0"
+  width="100%"
+  style="
+    border-collapse: collapse;
+    border-spacing: 0;
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    -webkit-font-smoothing: antialiased;
+    text-size-adjust: 100%;
+    -ms-text-size-adjust: 100%;
+    -webkit-text-size-adjust: 100%;
+    line-height: 100%;
+    background-color: #F0F0F0;
+    color: #000000;
+  "
+  bgcolor="#F0F0F0"
+  text="#000000"
+>
+  <table
+    width="100%"
+    align="center"
+    border="0"
+    cellpadding="0"
+    cellspacing="0"
+    style="
+      border-collapse: collapse;
+      border-spacing: 0;
+      margin: 0;
+      padding: 0;
+      width: 100%;
+    "
+  >
+    <tr>
+      <td
+        align="center"
+        valign="top"
+        bgcolor="#F0F0F0"
+        style="
+          border-collapse: collapse;
+          border-spacing: 0;
+          margin: 0;
+          padding: 0;
+        "
+      >
+
+        <table
+          border="0"
+          cellpadding="0"
+          cellspacing="0"
+          align="center"
+          bgcolor="#FFFFFF"
+          width="560"
+          style="
+            border-collapse: collapse;
+            border-spacing: 0;
+            padding: 0;
+            width: inherit;
+            max-width: 560px;
+          "
+          class="container"
+        >
+          <tr>
+            <td
+              align="right"
+              valign="top"
+              style="
+                border-collapse: collapse;
+                border-spacing: 0;
+                margin: 0;
+                padding-left: 6.25%;
+                padding-right: 6.25%;
+                padding-top: 30px;
+                padding-bottom: 30px;
+                width: 87.5%;
+                font-size: 17px;
+                font-weight: 400;
+                line-height: 160%;
+                color: #000000;
+                font-family: Arial, Helvetica, sans-serif;
+              "
+            >
+
+<p style="margin: 0 0 20px; line-height: 160%;">مرحباً ${(firstName!'')}،</p><p style="margin: 0 0 20px; line-height: 160%;">مرحباً بك في <strong>SmartPrüfung</strong>! 🎉</p><p style="margin: 0 0 20px; line-height: 160%;">يسعدنا انضمامك إلينا. يساعدك SmartPrüfung على الاستعداد لامتحانات اللغة الألمانية في بيئة امتحان رقمية واقعية. تدرّب في ظروف شبيهة بالامتحان، وراجع نتائجك، وافهم أخطاءك، وعزّز ثقتك قبل الامتحان الحقيقي.</p><p style="margin: 0 0 20px; line-height: 160%;">يمكنك حالياً الاستعداد لامتحان <strong>TELC Deutsch B1</strong>، بما يشمل:</p><p style="margin: 0 0 20px; line-height: 160%;">• فهم المقروء (Leseverstehen)<br>• التراكيب اللغوية (Sprachbausteine)<br>• فهم المسموع (Hörverstehen)<br>• التعبير الكتابي (Schriftlicher Ausdruck)</p><p style="margin: 0 0 20px; line-height: 160%;"><strong>يتضمن حسابك امتحاناً مجانياً واحداً</strong> لتجربة SmartPrüfung قبل شراء أي شيء.</p><p style="margin: 0 0 20px; line-height: 160%;"><strong>إليك كيفية البدء:</strong></p><p style="margin: 0 0 20px; line-height: 160%;">1. سجّل الدخول إلى <a href="https://app.smartpruefung.com/?lang=ar" target="_blank" style="color: #4F46E5; text-decoration: underline;">حسابك على SmartPrüfung</a>.</p><p style="margin: 0 0 20px; line-height: 160%;">2. اختر <strong>TELC Deutsch B1</strong> وابدأ امتحانك التجريبي المجاني.</p><p style="margin: 0 0 20px; line-height: 160%;">3. بعد إكمال الامتحان، راجع درجتك لتعرف مدى اقترابك من هدفك.</p><p style="margin: 0 0 20px; line-height: 160%;">إذا أردت مواصلة التدريب، يمكنك الاختيار بين:</p><p style="margin: 0 0 20px; line-height: 160%;"><strong>10 امتحانات — 9.99 يورو</strong><br>10 امتحانات تجريبية إضافية لمستوى TELC B1.</p><p style="margin: 0 0 20px; line-height: 160%;"><strong>امتحانات غير محدودة — 29.99 يورو</strong><br>تدريب غير محدود على امتحانات TELC B1 طوال فترة وصولك.</p><p style="margin: 0 0 20px; line-height: 160%;">كلا الخيارين بدفعة واحدة دون تجديد تلقائي.</p><p style="margin: 0 0 20px; line-height: 160%;">يمكنك الاطّلاع على الخيارات هنا:</p><p style="margin: 0 0 20px; line-height: 160%;"><a href="https://app.smartpruefung.com/pricing?lang=ar" target="_blank" style="color: #4F46E5; text-decoration: underline;">عرض خطط SmartPrüfung</a></p><p style="margin: 0 0 20px; line-height: 160%;">إذا كانت لديك أسئلة أو واجهت مشكلة، فلا تتردد في التواصل معنا. يسعدنا مساعدتك.</p><p style="margin: 0 0 20px; line-height: 160%;">نتمنى لك التوفيق في امتحانك! 🇩🇪</p><p style="margin: 0 0 20px; line-height: 160%;">مع أطيب التحيات،<br>عزيز من SmartPrüfung</p>
+            </td>
+          </tr>
+        </table>
+
+        <table
+          border="0"
+          cellpadding="0"
+          cellspacing="0"
+          align="center"
+          width="560"
+          style="
+            border-collapse: collapse;
+            border-spacing: 0;
+            padding: 0;
+            width: inherit;
+            max-width: 560px;
+          "
+        >
+          <tr>
+            <td
+              align="center"
+              valign="top"
+              style="
+                border-collapse: collapse;
+                border-spacing: 0;
+                margin: 0;
+                padding-left: 6.25%;
+                padding-right: 6.25%;
+                width: 87.5%;
+                font-size: 13px;
+                font-weight: 400;
+                line-height: 150%;
+                padding-top: 20px;
+                padding-bottom: 20px;
+                color: #999999;
+                font-family: Arial, Helvetica, sans-serif;
+              "
+              class="footer"
+            >
+هل تحتاج إلى مساعدة؟ اطّلع على <a href="https://smartpruefung.com/ar/#faq" target="_blank" style="color: #4F46E5; text-decoration: underline;">الأسئلة الشائعة</a> أو تواصل معنا عبر <a href="https://smartpruefung.com/ar/contact" target="_blank" style="color: #4F46E5; text-decoration: underline;">نموذج التواصل</a>.
+            </td>
+          </tr>
+        </table>
+
+      </td>
+    </tr>
+  </table>
+</body>
+
+</html>

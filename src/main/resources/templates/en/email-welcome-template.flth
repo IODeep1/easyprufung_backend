@@ -1,0 +1,236 @@
+<#ftl output_format="HTML" auto_esc=true>
+<html lang="en" dir="ltr" xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+  <meta http-equiv="content-type" content="text/html; charset=utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0;">
+  <meta name="format-detection" content="telephone=no" />
+
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      min-width: 100%;
+      width: 100% !important;
+      height: 100% !important;
+    }
+
+    body,
+    table,
+    td,
+    div,
+    p,
+    a {
+      -webkit-font-smoothing: antialiased;
+      text-size-adjust: 100%;
+      -ms-text-size-adjust: 100%;
+      -webkit-text-size-adjust: 100%;
+      line-height: 100%;
+    }
+
+    table,
+    td {
+      mso-table-lspace: 0pt;
+      mso-table-rspace: 0pt;
+      border-collapse: collapse !important;
+      border-spacing: 0;
+    }
+
+    img {
+      border: 0;
+      line-height: 100%;
+      outline: none;
+      text-decoration: none;
+      -ms-interpolation-mode: bicubic;
+    }
+
+    #outlook a {
+      padding: 0;
+    }
+
+    .ReadMsgBody {
+      width: 100%;
+    }
+
+    .ExternalClass {
+      width: 100%;
+    }
+
+    .ExternalClass,
+    .ExternalClass p,
+    .ExternalClass span,
+    .ExternalClass font,
+    .ExternalClass td,
+    .ExternalClass div {
+      line-height: 100%;
+    }
+
+    @media all and (min-width: 560px) {
+      body {
+        margin-top: 30px;
+      }
+
+      .container {
+        margin-top: 20px;
+        border-radius: 8px;
+        -webkit-border-radius: 8px;
+        -moz-border-radius: 8px;
+        -khtml-border-radius: 8px;
+      }
+    }
+
+    a,
+    a:hover {
+      color: #4F46E5;
+    }
+
+    .footer a,
+    .footer a:hover {
+      color: #999999;
+    }
+  </style>
+
+  <title>Welcome to SmartPrüfung – Let’s Get Started!</title>
+</head>
+
+<body dir="ltr"
+  topmargin="0"
+  rightmargin="0"
+  bottommargin="0"
+  leftmargin="0"
+  marginwidth="0"
+  marginheight="0"
+  width="100%"
+  style="
+    border-collapse: collapse;
+    border-spacing: 0;
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    -webkit-font-smoothing: antialiased;
+    text-size-adjust: 100%;
+    -ms-text-size-adjust: 100%;
+    -webkit-text-size-adjust: 100%;
+    line-height: 100%;
+    background-color: #F0F0F0;
+    color: #000000;
+  "
+  bgcolor="#F0F0F0"
+  text="#000000"
+>
+  <table
+    width="100%"
+    align="center"
+    border="0"
+    cellpadding="0"
+    cellspacing="0"
+    style="
+      border-collapse: collapse;
+      border-spacing: 0;
+      margin: 0;
+      padding: 0;
+      width: 100%;
+    "
+  >
+    <tr>
+      <td
+        align="center"
+        valign="top"
+        bgcolor="#F0F0F0"
+        style="
+          border-collapse: collapse;
+          border-spacing: 0;
+          margin: 0;
+          padding: 0;
+        "
+      >
+
+        <table
+          border="0"
+          cellpadding="0"
+          cellspacing="0"
+          align="center"
+          bgcolor="#FFFFFF"
+          width="560"
+          style="
+            border-collapse: collapse;
+            border-spacing: 0;
+            padding: 0;
+            width: inherit;
+            max-width: 560px;
+          "
+          class="container"
+        >
+          <tr>
+            <td
+              align="left"
+              valign="top"
+              style="
+                border-collapse: collapse;
+                border-spacing: 0;
+                margin: 0;
+                padding-left: 6.25%;
+                padding-right: 6.25%;
+                padding-top: 30px;
+                padding-bottom: 30px;
+                width: 87.5%;
+                font-size: 17px;
+                font-weight: 400;
+                line-height: 160%;
+                color: #000000;
+                font-family: Arial, Helvetica, sans-serif;
+              "
+            >
+
+<p style="margin: 0 0 20px; line-height: 160%;">Hi ${(firstName!'')},</p><p style="margin: 0 0 20px; line-height: 160%;">Welcome to <strong>SmartPrüfung</strong>! 🎉</p><p style="margin: 0 0 20px; line-height: 160%;">We’re happy to have you here. SmartPrüfung helps you prepare for German language exams in a realistic digital exam environment. Practice under exam-like conditions, check your results, understand your mistakes, and build confidence before the real exam.</p><p style="margin: 0 0 20px; line-height: 160%;">You can currently prepare for <strong>TELC Deutsch B1</strong>, including:</p><p style="margin: 0 0 20px; line-height: 160%;">• Reading comprehension (Leseverstehen)<br>• Language elements (Sprachbausteine)<br>• Listening comprehension (Hörverstehen)<br>• Written expression (Schriftlicher Ausdruck)</p><p style="margin: 0 0 20px; line-height: 160%;"><strong>Your account includes 1 free exam</strong>, so you can try SmartPrüfung before purchasing anything.</p><p style="margin: 0 0 20px; line-height: 160%;"><strong>Here’s how to get started:</strong></p><p style="margin: 0 0 20px; line-height: 160%;">1. Log in to your <a href="https://app.smartpruefung.com/?lang=en" target="_blank" style="color: #4F46E5; text-decoration: underline;">SmartPrüfung account</a>.</p><p style="margin: 0 0 20px; line-height: 160%;">2. Choose <strong>TELC Deutsch B1</strong> and start your free practice exam.</p><p style="margin: 0 0 20px; line-height: 160%;">3. After completing the exam, review your score and see how close you are to your goal.</p><p style="margin: 0 0 20px; line-height: 160%;">If you want to continue practicing, you can choose between:</p><p style="margin: 0 0 20px; line-height: 160%;"><strong>10 Exams — €9.99</strong><br>10 additional TELC B1 practice exams.</p><p style="margin: 0 0 20px; line-height: 160%;"><strong>Unlimited Exams — €29.99</strong><br>Unlimited TELC B1 exam practice during your access period.</p><p style="margin: 0 0 20px; line-height: 160%;">Both are one-time payments with no automatic renewal.</p><p style="margin: 0 0 20px; line-height: 160%;">You can view your options here:</p><p style="margin: 0 0 20px; line-height: 160%;"><a href="https://app.smartpruefung.com/pricing?lang=en" target="_blank" style="color: #4F46E5; text-decoration: underline;">View SmartPrüfung plans</a></p><p style="margin: 0 0 20px; line-height: 160%;">If you have any questions or run into a problem, feel free to contact us. We’ll be happy to help.</p><p style="margin: 0 0 20px; line-height: 160%;">Good luck with your exam! 🇩🇪</p><p style="margin: 0 0 20px; line-height: 160%;">Cheers,<br>Aziz from SmartPrüfung</p>
+            </td>
+          </tr>
+        </table>
+
+        <table
+          border="0"
+          cellpadding="0"
+          cellspacing="0"
+          align="center"
+          width="560"
+          style="
+            border-collapse: collapse;
+            border-spacing: 0;
+            padding: 0;
+            width: inherit;
+            max-width: 560px;
+          "
+        >
+          <tr>
+            <td
+              align="center"
+              valign="top"
+              style="
+                border-collapse: collapse;
+                border-spacing: 0;
+                margin: 0;
+                padding-left: 6.25%;
+                padding-right: 6.25%;
+                width: 87.5%;
+                font-size: 13px;
+                font-weight: 400;
+                line-height: 150%;
+                padding-top: 20px;
+                padding-bottom: 20px;
+                color: #999999;
+                font-family: Arial, Helvetica, sans-serif;
+              "
+              class="footer"
+            >
+Need help? Visit our <a href="https://smartpruefung.com/en/#faq" target="_blank" style="color: #4F46E5; text-decoration: underline;">FAQ</a> or contact us through our <a href="https://smartpruefung.com/en/contact" target="_blank" style="color: #4F46E5; text-decoration: underline;">Contact Form</a>.
+            </td>
+          </tr>
+        </table>
+
+      </td>
+    </tr>
+  </table>
+</body>
+
+</html>

@@ -1,4 +1,5 @@
-<html xmlns="http://www.w3.org/1999/xhtml">
+<#ftl output_format="HTML" auto_esc=true>
+<html lang="en" dir="ltr" xmlns="http://www.w3.org/1999/xhtml">
 
 <head>
   <meta http-equiv="content-type" content="text/html; charset=utf-8">
@@ -92,7 +93,7 @@
   <title>Your SmartPrüfung purchase is confirmed</title>
 </head>
 
-<body
+<body dir="ltr"
   topmargin="0"
   rightmargin="0"
   bottommargin="0"
@@ -182,79 +183,7 @@
               "
             >
 
-              Hi ${firstName},
-              <br><br>
-
-              Thank you for your purchase! 🎉
-              <br><br>
-
-              Your <span style="font-weight: bold;">SmartPrüfung</span> exam access has been successfully activated.
-              <br><br>
-
-              You can now continue preparing for
-              <span style="font-weight: bold;">TELC Deutsch B1</span>
-              with realistic exam practice and detailed feedback.
-              <br><br>
-
-              Your purchased access is valid for
-              <span style="font-weight: bold;">60 days</span>.
-              <br><br>
-
-              This was a
-              <span style="font-weight: bold;">one-time payment</span>.
-              There is no subscription and no automatic renewal.
-              <br><br>
-
-              You can always check your current access and available exams directly in your SmartPrüfung account.
-              <br><br>
-
-              <span style="font-weight: bold;">What you can do now:</span>
-              <br><br>
-
-              <span style="font-weight: bold;">1.</span>
-              Start a new TELC Deutsch B1 practice exam.
-              <br><br>
-
-              <span style="font-weight: bold;">2.</span>
-              Practice Lesen, Sprachbausteine, Hörverstehen and Schriftlicher Ausdruck under realistic exam conditions.
-              <br><br>
-
-              <span style="font-weight: bold;">3.</span>
-              Review your scores, answers, explanations and exam feedback.
-              <br><br>
-
-              <span style="font-weight: bold;">4.</span>
-              Review your previous exams and track your progress as you prepare for the real exam.
-              <br><br>
-
-              <a
-                href="https://app.smartpruefung.com/new"
-                target="_blank"
-                style="
-                  display: inline-block;
-                  background-color: #000000;
-                  color: #FFFFFF;
-                  text-decoration: none;
-                  padding: 14px 24px;
-                  border-radius: 8px;
-                  font-weight: bold;
-                "
-              >
-                Start practicing
-              </a>
-
-              <br><br>
-
-              If you have any questions or experience a problem, feel free to contact us. We’ll be happy to help.
-              <br><br>
-
-              Viel Erfolg bei deiner TELC B1 Prüfung! 🇩🇪
-              <br><br>
-
-              Cheers,
-              <br>
-              Aziz from SmartPrüfung
-
+<p style="margin: 0 0 20px; line-height: 160%;">Hi ${(firstName!'')},</p><p style="margin: 0 0 20px; line-height: 160%;">Thank you for your purchase! 🎉</p><p style="margin: 0 0 20px; line-height: 160%;">Your <strong>SmartPrüfung</strong> exam access has been successfully activated.</p><p style="margin: 0 0 20px; line-height: 160%;">You can now continue preparing for <strong>TELC Deutsch B1</strong> with realistic exam practice and detailed feedback.</p><p style="margin: 0 0 20px; line-height: 160%;">Your purchased access is valid for <strong>60 days</strong>.</p><p style="margin: 0 0 20px; line-height: 160%;">This was a <strong>one-time payment</strong>. There is no subscription and no automatic renewal.</p><p style="margin: 0 0 20px; line-height: 160%;">You can always check your current access and available exams directly in your SmartPrüfung account.</p><p style="margin: 0 0 20px; line-height: 160%;"><strong>What you can do now:</strong></p><p style="margin: 0 0 20px; line-height: 160%;">1. Start a new TELC Deutsch B1 practice exam.</p><p style="margin: 0 0 20px; line-height: 160%;">2. Practice reading, language elements, listening and written expression under realistic exam conditions.</p><p style="margin: 0 0 20px; line-height: 160%;">3. Review your scores, answers, explanations and exam feedback.</p><p style="margin: 0 0 20px; line-height: 160%;">4. Review your previous exams and track your progress as you prepare for the real exam.</p><p style="margin: 0 0 20px; line-height: 160%;"><a href="https://app.smartpruefung.com/new?lang=en" target="_blank" style="display: inline-block; background-color: #000000; color: #FFFFFF; text-decoration: none; padding: 14px 24px; border-radius: 8px; font-weight: bold;">Start practicing</a></p><p style="margin: 0 0 20px; line-height: 160%;">If you have any questions or experience a problem, feel free to contact us. We’ll be happy to help.</p><p style="margin: 0 0 20px; line-height: 160%;">Good luck with your TELC B1 exam! 🇩🇪</p><p style="margin: 0 0 20px; line-height: 160%;">Cheers,<br>Aziz from SmartPrüfung</p>
             </td>
           </tr>
         </table>
@@ -294,34 +223,7 @@
               "
               class="footer"
             >
-              Need help? Check out our
-              <a
-                href="https://smartpruefung.com/#faq"
-                target="_blank"
-                style="
-                  text-decoration: underline;
-                  color: #999999;
-                  font-family: Arial, Helvetica, sans-serif;
-                  font-size: 13px;
-                  font-weight: 400;
-                  line-height: 150%;
-                "
-              >FAQ</a>
-
-              or contact us through our
-
-              <a
-                href="https://smartpruefung.com/contact"
-                target="_blank"
-                style="
-                  text-decoration: underline;
-                  color: #999999;
-                  font-family: Arial, Helvetica, sans-serif;
-                  font-size: 13px;
-                  font-weight: 400;
-                  line-height: 150%;
-                "
-              >Contact Form</a>.
+Need help? Visit our <a href="https://smartpruefung.com/en/#faq" target="_blank" style="color: #4F46E5; text-decoration: underline;">FAQ</a> or contact us through our <a href="https://smartpruefung.com/en/contact" target="_blank" style="color: #4F46E5; text-decoration: underline;">Contact Form</a>.
             </td>
           </tr>
         </table>
