@@ -10,7 +10,9 @@ import java.security.*;
 import java.util.*;
 import java.util.stream.Collectors;
 
-/** Stable identities exclude question numbering, scoring, instructions and explanations. */
+/** Stable identities exclude scoring, instructions and explanations.
+ * Cloze question numbers identify distinct gaps in a shared passage.
+ */
 @Component
 public class ExerciseFingerprint {
     private final JsonSupport json;
@@ -35,14 +37,32 @@ public class ExerciseFingerprint {
     }
 
     public Set<String> questions(AiGeneratedExerciseResponse response) {
-        return response.getQuestions().stream().map(q -> hash(json.write(Arrays.asList(
-                normalize(response.getContent()), normalize(q.getStimulus()), normalize(q.getPrompt()),
-                q.getType(), q.getOptions().stream().map(o -> normalize(o.getText()))
-                        .sorted().collect(Collectors.toList()))))).collect(Collectors.toSet());
+        return response.getQuestions().stream().map(q -> questionKey(response, q, true))
+                .collect(Collectors.toSet());
+    }
+
+    private String questionKey(AiGeneratedExerciseResponse response,
+                               AiGeneratedExerciseResponse.GeneratedQuestion question,
+                               boolean distinguishClozeGaps) {
+        List<Object> identity = new ArrayList<>(Arrays.asList(
+                normalize(response.getContent()), normalize(question.getStimulus()),
+                normalize(question.getPrompt()), question.getType(),
+                question.getOptions().stream().map(o -> normalize(o.getText()))
+                        .sorted().collect(Collectors.toList())));
+        if (distinguishClozeGaps && question.getType() == QuestionType.CLOZE_CHOICE) {
+            // Different blanks may legitimately have identical prompts and options.
+            // The number binds each item to its own [number] marker in the passage.
+            identity.add(question.getNumber());
+        }
+        return hash(json.write(identity));
     }
 
     public String content(AiGeneratedExerciseResponse response) {
-        return hash(json.write(questions(response).stream().sorted().collect(Collectors.toList())));
+        // Keep persisted whole-exercise keys compatible with existing pool rows.
+        // Per-question history is recomputed from snapshots using the gap-aware keys above.
+        List<String> keys = response.getQuestions().stream().map(q -> questionKey(response, q, false))
+                .distinct().sorted().collect(Collectors.toList());
+        return hash(json.write(keys));
     }
 
     public String listening(ExerciseInstance exercise) {
