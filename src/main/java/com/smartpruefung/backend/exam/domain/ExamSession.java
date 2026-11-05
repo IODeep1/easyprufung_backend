@@ -28,6 +28,8 @@ public class ExamSession extends BaseEntity {
     private Instant submittedAt;
     @Lob
     private String progressJson;
+    @Column(name = "certificate_token", unique = true, length = 36)
+    private String certificateToken;
     @OneToMany(mappedBy = "examSession", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("orderIndex ASC")
     private List<ExerciseInstance> exercises = new ArrayList<>();

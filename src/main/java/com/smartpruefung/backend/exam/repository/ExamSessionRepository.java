@@ -24,6 +24,8 @@ public interface ExamSessionRepository extends JpaRepository<ExamSession, UUID> 
     @Query("select s from ExamSession s where s.id = :id")
     Optional<ExamSession> lockById(@Param("id") UUID id);
 
+    Optional<ExamSession> findByCertificateToken(String certificateToken);
+
     @EntityGraph(attributePaths = "examDefinition")
     Page<ExamSession> findByUserId(String userId, Pageable pageable);
 }

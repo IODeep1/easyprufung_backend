@@ -30,11 +30,13 @@ public class ExamSessionController {
         return user.getUuid();
     }
     private final ExamGenerationService generation;
+    private final ExamCertificateService certificates;
     private final ExamSubmissionService submission;
     private final ExamQueryService queries;
 
     public ExamSessionController(ExamGenerationService generation, ExamSubmissionService submission,
-                                 ExamQueryService queries) {
+                                 ExamQueryService queries, ExamCertificateService certificates) {
+        this.certificates = certificates;
         this.generation = generation; this.submission = submission; this.queries = queries;
     }
 
@@ -65,6 +67,19 @@ public class ExamSessionController {
     public ExamProgressView save(@PathVariable UUID sessionId, @RequestHeader("Authorization") String authorization,
                                  @Valid @RequestBody ExamProgressView draft) {
         return progress.save(sessionId, owner(authorization), draft);
+    }
+
+    @PostMapping("/{sessionId}/certificate")
+    public java.util.Map<String, String> publishCertificate(@PathVariable UUID sessionId,
+            @RequestHeader("Authorization") String authorization) {
+        return java.util.Map.of("token", certificates.publish(sessionId, owner(authorization)));
+    }
+
+    @DeleteMapping("/{sessionId}/certificate")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void revokeCertificate(@PathVariable UUID sessionId,
+            @RequestHeader("Authorization") String authorization) {
+        certificates.revoke(sessionId, owner(authorization));
     }
 
     @PostMapping("/{sessionId}/submit")
