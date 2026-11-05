@@ -15,6 +15,15 @@ public interface ExamSessionRepository extends JpaRepository<ExamSession, UUID> 
     @Query("select s from ExamSession s where s.id = :id")
     Optional<ExamSession> findDetailedById(@Param("id") UUID id);
 
+    Optional<ExamSession> findFirstByUserIdAndExamDefinitionIdAndStatusOrderByCreatedAtDesc(
+            String userId, UUID definitionId, com.smartpruefung.backend.exam.domain.SessionStatus status);
+    Optional<ExamSession> findFirstByUserIdAndStatusOrderByCreatedAtDesc(
+            String userId, com.smartpruefung.backend.exam.domain.SessionStatus status);
+
+    @org.springframework.data.jpa.repository.Lock(javax.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @Query("select s from ExamSession s where s.id = :id")
+    Optional<ExamSession> lockById(@Param("id") UUID id);
+
     @EntityGraph(attributePaths = "examDefinition")
     Page<ExamSession> findByUserId(String userId, Pageable pageable);
 }

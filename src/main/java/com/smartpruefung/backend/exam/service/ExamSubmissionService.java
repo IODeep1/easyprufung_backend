@@ -43,7 +43,7 @@ public class ExamSubmissionService {
 
     @Transactional(noRollbackFor = ExpiredSessionException.class)
     public ExamResultView submit(String userEmail, UUID sessionId, SubmitExamRequest request) {
-        ExamSession session = sessions.findDetailedById(sessionId)
+        ExamSession session = sessions.lockById(sessionId)
                 .orElseThrow(() -> new ResourceNotFoundException("Exam session not found: " + sessionId));
         if (session.getStatus() == SessionStatus.EVALUATED) {
             return mapper.toView(results.findByExamSessionId(sessionId)

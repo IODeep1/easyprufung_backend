@@ -73,6 +73,10 @@ public class ExamGenerationService {
         ExamDefinition definition = definitionService.resolve(request);
         definitions.lockForStart(definition.getId()).orElseThrow(() ->
                 new ExamConfigurationException("Exam definition disappeared during start"));
+        // The definition lock serializes starts across application instances/devices.
+        var existing = sessionRepository.findFirstByUserIdAndExamDefinitionIdAndStatusOrderByCreatedAtDesc(
+                request.getUserId(), definition.getId(), SessionStatus.IN_PROGRESS);
+        if (existing.isPresent()) return mapper.toView(existing.get());
         validateDefinition(definition);
 
         List<PartDefinition> parts = orderedParts(definition);
