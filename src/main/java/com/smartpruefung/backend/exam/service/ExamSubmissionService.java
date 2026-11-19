@@ -60,6 +60,9 @@ public class ExamSubmissionService {
             throw new ExpiredSessionException("Exam session has expired");
         }*/
 
+        User user = userService.getUserByEmail(userEmail);
+        if (user == null || !subscriptionService.hasAvailableQuota(user.getSubscription()))
+            throw com.smartpruefung.backend.exam.guest.ExamAccessService.payment();
         Map<String, AnswerPayload> submitted = mergeAnswers(request);
         Map<String, QuestionLocation> questionByNumber = indexQuestions(session);
         submitted.keySet().forEach(number -> {
@@ -118,8 +121,8 @@ public class ExamSubmissionService {
         session.setSubmittedAt(Instant.now());
         session.setStatus(SessionStatus.EVALUATED);
         sessions.save(session);
-        User user = userService.getUserByEmail(userEmail);
-        subscriptionService.consumeQuota(user.getSubscription());
+        if (!subscriptionService.consumeQuota(user.getSubscription()))
+            throw com.smartpruefung.backend.exam.guest.ExamAccessService.payment();
             activity.exam("EXAM_SUBMITTED", session.getUserId(), sessionId);
         return mapper.toView(results.save(examResult));
     }

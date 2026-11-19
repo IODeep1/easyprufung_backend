@@ -29,6 +29,14 @@ public class ExamSessionController {
         if (user == null) throw new org.springframework.web.server.ResponseStatusException(HttpStatus.UNAUTHORIZED);
         return user.getUuid();
     }
+    @org.springframework.beans.factory.annotation.Autowired
+    private com.smartpruefung.backend.exam.guest.ExamAccessService access;
+    @org.springframework.beans.factory.annotation.Autowired
+    private com.smartpruefung.backend.exam.guest.GuestExamService guests;
+    @PostMapping("/guest/claim")
+    public ExamSessionView claimGuest(@RequestHeader("Authorization") String authorization,@RequestHeader("X-Guest-Token") String token){
+        return guests.claim(token,owner(authorization));
+    }
     private final ExamGenerationService generation;
     private final ExamCertificateService certificates;
     private final ExamSubmissionService submission;
@@ -44,7 +52,7 @@ public class ExamSessionController {
     @ResponseStatus(HttpStatus.CREATED)
     public ExamSessionView start(@Valid @RequestBody StartExamRequest request, @RequestHeader("Authorization") String authorization) {
         request.setUserId(owner(authorization));
-        return generation.start(request);
+        return access.start(request);
     }
 
     @GetMapping("/{sessionId}")
@@ -72,6 +80,7 @@ public class ExamSessionController {
     @PostMapping("/{sessionId}/certificate")
     public java.util.Map<String, String> publishCertificate(@PathVariable UUID sessionId,
             @RequestHeader("Authorization") String authorization) {
+        access.requirePremium(owner(authorization));
         return java.util.Map.of("token", certificates.publish(sessionId, owner(authorization)));
     }
 
@@ -86,7 +95,7 @@ public class ExamSessionController {
     public ExamResultView submit(@PathVariable UUID sessionId, @Valid @RequestBody SubmitExamRequest request, @RequestHeader("Authorization") String authorizationHeader) {
         progress.authorize(sessionId, owner(authorizationHeader));
         var httpClientConsumer = JwtUtils.getHttpClientConsumer(authorizationHeader);
-        return submission.submit(httpClientConsumer.email, sessionId, request);
+        return access.result(owner(authorizationHeader), submission.submit(httpClientConsumer.email, sessionId, request));
     }
 
     @GetMapping
@@ -105,6 +114,6 @@ public class ExamSessionController {
     @GetMapping("/{sessionId}/result")
     public ExamResultView result(@PathVariable UUID sessionId, @RequestHeader("Authorization") String authorization) {
         progress.authorize(sessionId, owner(authorization));
-        return queries.getResult(sessionId);
+        return access.result(owner(authorization), queries.getResult(sessionId));
     }
 }

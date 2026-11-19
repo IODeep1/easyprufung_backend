@@ -23,6 +23,7 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.test.context.ActiveProfiles;
 
 @SpringBootTest(properties={
+ "smartpruefung.email.founder.max-attempts=5",
  "spring.datasource.url=jdbc:h2:mem:founder-follow-up-tests;MODE=MySQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE"
 })
 @ActiveProfiles("admin-test")

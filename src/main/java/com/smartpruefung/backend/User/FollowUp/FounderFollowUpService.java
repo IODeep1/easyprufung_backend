@@ -22,7 +22,7 @@ public class FounderFollowUpService {
  private final long retrySeconds;
  public FounderFollowUpService(FounderFollowUpRepository jobs,UsersRepository users,AdminUserStateRepository states,
   FounderFollowUpMail mail,@Qualifier("founderFollowUpClock") Clock clock,
-  @Value("${smartpruefung.email.founder.max-attempts:5}") int maxAttempts,
+  @Value("${smartpruefung.email.founder.max-attempts:1}") int maxAttempts,
   @Value("${smartpruefung.email.founder.retry-seconds:3600}") long retrySeconds){
   this.jobs=jobs;this.users=users;this.states=states;this.mail=mail;this.clock=clock;
   this.maxAttempts=Math.max(1,maxAttempts);this.retrySeconds=Math.max(60,retrySeconds);

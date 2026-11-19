@@ -23,11 +23,13 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.*;
 
-@SpringBootTest
+@SpringBootTest(properties="smartpruefung.guest.exam-code=GUEST_TEST")
 @AutoConfigureMockMvc
 @ActiveProfiles("admin-test")
 class AdminIntegrationTest {
   @Autowired MockMvc mvc;
+  @org.springframework.boot.test.mock.mockito.MockBean org.springframework.web.client.RestTemplate google;
+  @Autowired com.smartpruefung.backend.exam.guest.GuestExamRepository guestRecords;
   @Autowired PlanSettingsRepository planSettings;
   @Autowired com.smartpruefung.backend.User.Service.SubscriptionService customerAccess;
 
@@ -139,6 +141,97 @@ class AdminIntegrationTest {
   @Autowired com.smartpruefung.backend.activity.ActivityService activity;
   @Autowired org.springframework.jdbc.core.JdbcTemplate activityDb;
   @Autowired org.springframework.transaction.support.TransactionTemplate activityTx;
+
+  JsonNode guestCall(String method,String suffix,Object value,String token,int expected) throws Exception {
+    var req=org.springframework.test.web.servlet.request.MockMvcRequestBuilders.request(
+      org.springframework.http.HttpMethod.valueOf(method),"/public/exams/guest"+suffix).contentType(MediaType.APPLICATION_JSON);
+    if(token!=null) req.header("X-Guest-Token",token);
+    if(value!=null) req.content(json.writeValueAsBytes(value));
+    var result=mvc.perform(req).andExpect(status().is(expected)).andReturn();
+    return result.getResponse().getContentAsString().isBlank()?NullNode.instance:body(result);
+  }
+  JsonNode claimGuest(String guest,String jwt,int expected) throws Exception {
+    return body(mvc.perform(post("/api/exams/sessions/guest/claim").header("Authorization","Bearer "+jwt)
+      .header("X-Guest-Token",guest)).andExpect(status().is(expected)).andReturn());
+  }
+  @Test
+  void guestCapabilitiesExpireAndNewAllocationsAreRateLimited() throws Exception {
+    String guest=guestCall("POST","",null,null,200).get("token").asText();
+    var stored=guestRecords.findAll().stream().filter(g->g.getTokenHash().equals(com.smartpruefung.backend.exam.guest.GuestExamService.hash(guest))).findFirst().orElseThrow();
+    assertNotEquals(guest,stored.getTokenHash());assertEquals(64,stored.getTokenHash().length());
+    stored.setExpiresAt(java.time.Instant.now().minusSeconds(1));guestRecords.saveAndFlush(stored);
+    guestCall("GET","",null,guest,404);
+    for(int i=0;i<20;i++) mvc.perform(post("/public/exams/guest").with(req->{req.setRemoteAddr("198.51.100.44");return req;})).andExpect(status().isOk());
+    mvc.perform(post("/public/exams/guest").with(req->{req.setRemoteAddr("198.51.100.44");return req;})).andExpect(status().isTooManyRequests());
+  }
+
+  @Test
+  void guestExamSurvivesRegistrationAndPurchaseGatesDetailsAndFurtherExams() throws Exception {
+    ObjectNode input=exam("PREDEFINED");input.put("code","GUEST_TEST");input.put("provider","TELC");
+    JsonNode exam=call("POST","/api/admin/v1/exams",input,root,201);
+    String part=exam.get("sections").get(0).get("parts").get(0).get("id").asText();
+    Object template=Map.of("templateKey","guest_test","instructions","Choose an answer.","questions",List.of(
+      Map.of("number","1","prompt","Choose a","type","SINGLE_CHOICE","maximumScore",1,
+      "options",List.of(Map.of("key","a","text","Answer a"),Map.of("key","b","text","Answer b")),
+      "correctAnswer",Map.of("acceptedOptionKeys",List.of("a")))));
+    mvc.perform(post("/api/admin/v1/parts/"+part+"/templates").header("Authorization","Bearer "+root).header("X-Reason","Guest test")
+      .contentType(MediaType.APPLICATION_JSON).content(json.writeValueAsBytes(template))).andExpect(status().isCreated());
+    mvc.perform(put("/api/admin/v1/exams/"+exam.get("id").asText()+"/publication?active=true").header("Authorization","Bearer "+root)
+      .header("If-Match",exam.get("entityVersion").asLong()).header("X-Reason","Guest test")).andExpect(status().isOk());
+    String guest=guestCall("POST","",null,null,200).get("token").asText();
+    JsonNode started=guestCall("POST","/start",null,guest,200);
+    String id=started.get("sessionId").asText();
+    assertEquals(id,guestCall("POST","/start",null,guest,200).get("sessionId").asText());
+    assertFalse(started.toString().contains("correctAnswer"));
+    guestCall("GET","",null,"x".repeat(43),404);
+    call("POST","/api/exams/sessions/"+id+"/submit",Map.of("compactAnswers","1a"),null,403);
+    JsonNode other=createUser();String otherJwt=JwtUtils.getJWTToken(other.get("email").asText(),"ROLE_USER");
+    call("GET","/api/exams/sessions/"+id,null,otherJwt,404);
+    claimGuest(guest,otherJwt,409); // cannot claim before finishing
+    Object progress=Map.of("revision",0,"index",0,"answers",Map.of("1",Map.of("selectedOptionKeys",List.of("a"),"text","")));
+    assertEquals(1,guestCall("PUT","/progress",progress,guest,200).get("revision").asInt());
+    guestCall("PUT","/progress",progress,guest,409);
+    assertEquals("a",guestCall("GET","",null,guest,200).get("progress").get("answers").get("1").get("selectedOptionKeys").get(0).asText());
+    guestCall("POST","/finish",null,guest,204);
+    guestCall("PUT","/progress",progress,guest,409);
+    var registration=newUser();
+    JsonNode registered=call("POST","/public/user/create",registration,null,200);
+    String jwt=registered.get("token").asText();String uuid=registered.get("uuid").asText();
+    assertEquals(id,claimGuest(guest,jwt,200).get("sessionId").asText());
+    assertEquals(id,claimGuest(guest,jwt,200).get("sessionId").asText());
+    claimGuest(guest,otherJwt,404);guestCall("GET","",null,guest,404);
+    JsonNode restored=call("GET","/api/exams/sessions/"+id+"/progress",null,jwt,200);
+    assertEquals("a",restored.get("answers").get("1").get("selectedOptionKeys").get(0).asText());
+    var answers=Map.of("compactAnswers","1a");
+    JsonNode result=call("POST","/api/exams/sessions/"+id+"/submit",answers,jwt,200);
+    assertTrue(result.get("passed").asBoolean());assertEquals(0,result.get("questions").size());assertEquals(0,result.get("sections").size());
+    assertEquals(0,call("GET","/api/exams/sessions/"+id+"/result",null,jwt,200).get("questions").size());
+    call("POST","/api/exams/sessions/"+id+"/submit",answers,jwt,200);
+    assertEquals(0,users.findByEmail(registered.get("email").asText()).getSubscription().getQuota());
+    Object start=Map.of("userId",uuid,"provider","TELC","level","B1","examCode","GUEST_TEST");
+    call("POST","/api/exams/sessions",start,jwt,402);
+    call("POST","/api/exams/sessions/"+id+"/certificate",null,jwt,402);
+    String second=guestCall("POST","",null,null,200).get("token").asText();
+    guestCall("POST","/start",null,second,200);guestCall("POST","/finish",null,second,204);claimGuest(second,jwt,402);
+    JsonNode adminUser=call("GET","/api/admin/v1/users/"+registered.get("id").asLong(),null,root,200);
+    Object grant=Map.of("plan","b1","quota",10,"status","active","version",adminUser.get("subscription").get("version").asLong(),"reason","Paid access test");
+    call("PUT","/api/admin/v1/users/"+registered.get("id").asLong()+"/subscription",grant,root,200);
+    JsonNode unlocked=call("GET","/api/exams/sessions/"+id+"/result",null,jwt,200);
+    assertEquals(1,unlocked.get("questions").size());assertEquals(1,unlocked.get("sections").size());
+    call("POST","/api/exams/sessions",start,jwt,201);
+    assertEquals(1,call("GET","/api/admin/v1/activity?user="+uuid+"&type=EXAM_SUBMITTED",null,root,200).get("totalElements").asInt());
+    // A first Google signup can claim the same kind of saved guest work as a password signup.
+    String googleGuest=guestCall("POST","",null,null,200).get("token").asText();
+    String googleSession=guestCall("POST","/start",null,googleGuest,200).get("sessionId").asText();
+    guestCall("PUT","/progress",progress,googleGuest,200);guestCall("POST","/finish",null,googleGuest,204);
+    String googleEmail=UUID.randomUUID()+"@example.com";
+    org.mockito.Mockito.when(google.getForObject(org.mockito.ArgumentMatchers.anyString(),org.mockito.ArgumentMatchers.eq(String.class)))
+      .thenReturn(json.writeValueAsString(Map.of("email",googleEmail,"given_name","Guest","family_name","Google")));
+    JsonNode googleAccount=call("POST","/public/user/google/login",Map.of("access_token","test-token","preferredLanguage","fr"),null,200);
+    claimGuest(googleGuest,googleAccount.get("token").asText(),200);
+    assertEquals("a",call("GET","/api/exams/sessions/"+googleSession+"/progress",null,googleAccount.get("token").asText(),200)
+      .get("answers").get("1").get("selectedOptionKeys").get(0).asText());
+  }
 
   @Test
   void activityCollectionIdentityDedupeFilteringAndPermissions() throws Exception {
