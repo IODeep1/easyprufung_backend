@@ -1,6 +1,7 @@
 package com.smartpruefung.backend.PromoCode.Controller;
 
 import com.smartpruefung.backend.EndPoints;
+import com.smartpruefung.backend.Admin.Console.Service.AdminPromoRedemptionService;
 import com.smartpruefung.backend.PromoCode.PromoCode;
 import com.smartpruefung.backend.PromoCode.Service.PromoCodeService;
 import com.smartpruefung.backend.User.Service.SubscriptionService;
@@ -26,6 +27,7 @@ import org.springframework.web.server.ResponseStatusException;
 public class PromoCodeController {
 
     private final UserService userService;
+    private final AdminPromoRedemptionService adminPromoRedemptionService;
     private final PromoCodeService promoCodeService;
     private final SubscriptionService subscriptionService;
 
@@ -34,6 +36,7 @@ public class PromoCodeController {
         try
         {
             String response = "INVALID";
+            code = adminPromoRedemptionService.normalizeCode(code);
             var httpClientConsumer = JwtUtils.getHttpClientConsumer(authorizationHeader);
             User user = userService.getUserByEmail(httpClientConsumer.email);
             if(user != null)
@@ -44,6 +47,10 @@ public class PromoCodeController {
                     user.setSubscription(newSubscription);
                     userService.updateUser(user);
                     userService.sendNewSubscriptionEmail(user);
+                    response = "ACTIVATED";
+                }
+                else if(adminPromoRedemptionService.redeem(code, user.getId()))
+                {
                     response = "ACTIVATED";
                 }
             }

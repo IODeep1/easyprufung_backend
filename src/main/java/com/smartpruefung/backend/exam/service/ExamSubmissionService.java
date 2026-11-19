@@ -21,6 +21,8 @@ import java.util.stream.Collectors;
 
 @Service
 public class ExamSubmissionService {
+    @org.springframework.beans.factory.annotation.Autowired
+    private com.smartpruefung.backend.activity.ActivityService activity;
     private final ExamSessionRepository sessions;
     private final UserAnswerRepository answers;
     private final ExamResultRepository results;
@@ -118,6 +120,7 @@ public class ExamSubmissionService {
         sessions.save(session);
         User user = userService.getUserByEmail(userEmail);
         subscriptionService.consumeQuota(user.getSubscription());
+            activity.exam("EXAM_SUBMITTED", session.getUserId(), sessionId);
         return mapper.toView(results.save(examResult));
     }
 

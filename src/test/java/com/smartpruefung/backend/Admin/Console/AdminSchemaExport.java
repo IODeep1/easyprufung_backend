@@ -43,6 +43,8 @@ public class AdminSchemaExport {
       ddl.add("-- Apply once to an existing MySQL database before running with schema validation.");
       Set<String> tables =
           Set.of(
+              "user_activity",
+              "admin_promo_redemptions",
               "admin_credentials",
               "admin_user_state",
               "admin_subscription_state",

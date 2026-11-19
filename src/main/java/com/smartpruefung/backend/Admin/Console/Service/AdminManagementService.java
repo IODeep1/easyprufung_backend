@@ -288,9 +288,9 @@ public class AdminManagementService {
       where +=
           enabled.equals("true")
               ? " and not exists (select t.id from AdminUserState t where t.id=e.id and"
-                    + " t.enabled=false)"
+                  + " t.enabled=false)"
               : " and exists (select t.id from AdminUserState t where t.id=e.id and"
-                    + " t.enabled=false)";
+                  + " t.enabled=false)";
     }
     return page("select e ", "from User e", where, Map.of("q", search(q)), User.class, page, size)
         .map(this::userView);
@@ -697,18 +697,37 @@ public class AdminManagementService {
 
   public PromoCode savePromo(Long id, AdminRequests.PromoInput in) {
     plans.get(in.getPlan());
+    String normalizedCode = in.getCode().trim().toUpperCase(Locale.ROOT);
+    require(
+        !Set.of("STARTER4NEXT", "AICO2025").contains(normalizedCode),
+        "This code is reserved for the existing promotion");
     require(
         em.createQuery(
                     "select count(p) from PromoCode p where lower(p.code)=:code and p.id<>:id",
                     Long.class)
-                .setParameter("code", in.getCode().toLowerCase(Locale.ROOT))
+                .setParameter("code", normalizedCode.toLowerCase(Locale.ROOT))
                 .setParameter("id", id == null ? -1L : id)
                 .getSingleResult()
             == 0,
         "Code already exists");
     PromoCode p = id == null ? new PromoCode() : found(PromoCode.class, id);
     Object before = id == null ? null : json.valueToTree(p);
-    p.setCode(in.getCode());
+    if (id != null) {
+      em.lock(p, LockModeType.PESSIMISTIC_WRITE);
+      em.refresh(p);
+      require("admin".equals(p.getType()), "Legacy promo records are read-only");
+      if (!normalizedCode.equalsIgnoreCase(p.getCode())) {
+        require(
+            em.createQuery(
+                        "select count(r) from AdminPromoRedemption r where r.code=:code",
+                        Long.class)
+                    .setParameter("code", p.getCode().toUpperCase(Locale.ROOT))
+                    .getSingleResult()
+                == 0,
+            "Redeemed codes cannot be renamed; create another code");
+      }
+    }
+    p.setCode(normalizedCode);
     p.setPlan(in.getPlan());
     p.setIsActive(in.isActive());
     p.setStatus(in.isActive() ? "active" : "disabled");
@@ -725,6 +744,8 @@ public class AdminManagementService {
 
   public void deletePromo(long id, String reason) {
     PromoCode p = found(PromoCode.class, id);
+    em.lock(p, LockModeType.PESSIMISTIC_WRITE);
+    em.refresh(p);
     audit("DELETE", "promo", id, p, null, reason);
     em.remove(p);
   }
