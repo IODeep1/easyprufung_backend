@@ -234,6 +234,38 @@ class AdminIntegrationTest {
   }
 
   @Test
+  void anonymousWebsiteActivityValidationDedupeAndAdminCounts() throws Exception {
+    String visitor=UUID.randomUUID().toString();
+    var event=new HashMap<String,Object>();
+    event.put("eventId",UUID.randomUUID().toString());event.put("visitorId",visitor);
+    event.put("type","WEBSITE_CLICKED");event.put("path","/en/pricing");event.put("target","Get 10 exams (pricing)");event.put("country","DE");
+    event.put("destination","https://app.smartpruefung.com/register");event.put("language","en");
+    call("POST","/public/activity/website",event,null,204);
+    call("POST","/public/activity/website",event,null,204);
+    String path="/api/admin/v1/activity?user=visitor:"+visitor;
+    JsonNode list=call("GET",path,null,root,200);
+    assertEquals(1,list.get("totalElements").asInt());
+    assertEquals("/en/pricing",list.get("content").get(0).get("pagePath").asText());
+    assertEquals("Get 10 exams (pricing)",list.get("content").get(0).get("target").asText());
+    JsonNode summary=call("GET","/api/admin/v1/activity/summary?user=visitor:"+visitor,null,root,200);
+    assertEquals(1,summary.get("targets").get(0).get("total").asInt());
+    assertEquals(1,summary.get("users").asInt());
+    assertEquals("DE",list.get("content").get(0).get("country").asText());
+    assertEquals("DE",summary.get("countries").get(0).get("country").asText());
+    call("GET",path,null,null,401);
+    event.put("eventId",UUID.randomUUID().toString());event.put("type","EXAM_SUBMITTED");
+    call("POST","/public/activity/website",event,null,400);
+    event.put("type","WEBSITE_PAGE_VIEWED");event.put("path","/en?email=private");
+    call("POST","/public/activity/website",event,null,400);
+    event.put("path","/en");event.put("destination","/register?email=private");
+    call("POST","/public/activity/website",event,null,400);
+    event.put("destination","/register");event.put("visitorId","not-an-id");
+    call("POST","/public/activity/website",event,null,400);
+    event.put("visitorId",visitor);call("POST","/public/activity/website",event,null,204);
+    assertEquals(2,call("GET",path,null,root,200).get("totalElements").asInt());
+  }
+
+  @Test
   void activityCollectionIdentityDedupeFilteringAndPermissions() throws Exception {
     JsonNode u=createUser(), other=createUser();
     String uuid=users.findByEmail(u.get("email").asText()).getUuid();

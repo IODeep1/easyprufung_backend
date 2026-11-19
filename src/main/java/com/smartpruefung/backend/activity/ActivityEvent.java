@@ -17,4 +17,9 @@ public class ActivityEvent {
  @Column(length=36) private String sessionId;
  @Column(length=32) private String plan;
  @Column(length=100) private String source;
+ @Column(name="page_path",length=300) private String pagePath;
+ @Column(length=200) private String target;
+ @Column(length=300) private String destination;
+ @Column(length=10) private String language;
+ @Column(length=2) private String country;
 }

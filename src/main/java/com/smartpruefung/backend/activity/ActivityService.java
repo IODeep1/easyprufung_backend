@@ -10,9 +10,10 @@ import static com.smartpruefung.backend.Admin.Console.Service.AdminManagementSer
 
 @Service
 public class ActivityService {
- public static final List<String> TYPES=List.of("EXAM_STARTED","EXAM_SUBMITTED","PRICING_VIEWED","STRIPE_LINK_CLICKED");
+ public static final List<String> TYPES=List.of("EXAM_STARTED","EXAM_SUBMITTED","PRICING_VIEWED","STRIPE_LINK_CLICKED","WEBSITE_PAGE_VIEWED","WEBSITE_CLICKED");
  private final JdbcTemplate db;
- public ActivityService(JdbcTemplate db) { this.db=db; }
+ private final ActivityCountry countries;
+ public ActivityService(JdbcTemplate db,ActivityCountry countries) { this.db=db;this.countries=countries; }
  // Exam calls join the existing business transaction: rolled-back work emits no event.
  public void exam(String type,String user,UUID session) {
   insert(type+":"+session,user,type,session.toString(),null,"exam",false);
@@ -24,10 +25,18 @@ public class ActivityService {
    throw new IllegalArgumentException("Unknown payment plan");
   insert("browser:"+user+":"+eventId,user,type,null,plan,source,true);
  }
+ public void website(String eventId,String visitor,String type,String path,String target,String destination,String language,String country) {
+  if (!List.of("WEBSITE_PAGE_VIEWED","WEBSITE_CLICKED").contains(type)) throw new IllegalArgumentException("Unsupported website event");
+  String id="website:"+visitor+":"+eventId;
+  try {
+   db.update("insert into user_activity (id,user_uuid,event_type,occurred_at,source,page_path,target,destination,language,country) values (?,?,?,?,?,?,?,?,?,?)",
+    id,"visitor:"+visitor,type,LocalDateTime.ofInstant(Instant.now(),ZoneOffset.UTC),"website",path,target,destination,language,ActivityCountry.normalize(country));
+  } catch (DuplicateKeyException ignored) { }
+ }
  private void insert(String id,String user,String type,String session,String plan,String source,boolean deduplicate) {
   try {
-   db.update("insert into user_activity (id,user_uuid,event_type,occurred_at,session_id,plan,source) values (?,?,?,?,?,?,?)",
-    id,user,type,LocalDateTime.ofInstant(Instant.now(),ZoneOffset.UTC),session,plan,source);
+   db.update("insert into user_activity (id,user_uuid,event_type,occurred_at,session_id,plan,source,country) values (?,?,?,?,?,?,?,?)",
+    id,user,type,LocalDateTime.ofInstant(Instant.now(),ZoneOffset.UTC),session,plan,source,countries.current());
   } catch (DuplicateKeyException e) { if (!deduplicate) throw e; }
  }
  private Filter filter(String from,String to,String type,String user) {
@@ -59,7 +68,8 @@ public class ActivityService {
   var trend=db.queryForList("select cast(a.occurred_at as date) as day, a.event_type as action, count(*) as total from user_activity a"+f.sql+" group by cast(a.occurred_at as date), a.event_type order by day",f.values());
   Long total=db.queryForObject("select count(*) from user_activity a"+f.sql,Long.class,f.values());
   Long users=db.queryForObject("select count(distinct a.user_uuid) from user_activity a"+f.sql,Long.class,f.values());
-  return row("total",total,"users",users,"counts",counts,"trend",trend);
+  var targets=db.queryForList("select a.page_path as page, a.target, a.destination, count(*) as total from user_activity a"+f.sql+" and a.event_type='WEBSITE_CLICKED' group by a.page_path,a.target,a.destination order by total desc limit 100",f.values());
+  return row("total",total,"users",users,"counts",counts,"trend",trend,"targets",targets,"countries",db.queryForList("select a.country,count(*) as total,count(distinct a.user_uuid) as visitors from user_activity a"+f.sql+" group by a.country order by total desc",f.values()));
  }
  public Object list(String from,String to,String type,String user,int page,int size,boolean grouped) {
   if(page<0 || page>100000 || size<1 || size>100) throw new IllegalArgumentException("Invalid pagination");
@@ -67,7 +77,7 @@ public class ActivityService {
   String join=" from user_activity a left join users u on a.user_uuid=u.uuid";
   String group=grouped?" group by a.user_uuid, u.email, a.event_type":"";
   String fields=grouped?"a.user_uuid as `userUuid`,u.email,a.event_type as action,count(*) as total,max(a.occurred_at) as `lastActivity`":
-   "a.id,a.user_uuid as `userUuid`,u.email,a.event_type as action,a.occurred_at as `occurredAt`,a.session_id as `sessionId`,a.plan,a.source";
+   "a.id,a.user_uuid as `userUuid`,u.email,a.event_type as action,a.occurred_at as `occurredAt`,a.session_id as `sessionId`,a.plan,a.source,a.page_path as `pagePath`,a.target,a.destination,a.language,a.country";
   String order=grouped?" order by total desc,a.user_uuid,a.event_type":" order by a.occurred_at desc,a.id desc";
   Long total=grouped?db.queryForObject("select count(*) from (select a.user_uuid,a.event_type from user_activity a"+f.sql+" group by a.user_uuid,a.event_type) counts",Long.class,f.values()):
    db.queryForObject("select count(*) from user_activity a"+f.sql,Long.class,f.values());
@@ -79,7 +89,7 @@ public class ActivityService {
     if(value instanceof Timestamp) value=((Timestamp)value).toLocalDateTime().toInstant(ZoneOffset.UTC).toString();
     String key=rs.getMetaData().getColumnLabel(i).toLowerCase(Locale.ROOT);
     switch(key) {case "useruuid": key="userUuid"; break; case "occurredat": key="occurredAt"; break;
-     case "sessionid": key="sessionId"; break; case "lastactivity": key="lastActivity"; break; default: break;}
+     case "pagepath": key="pagePath"; break; case "sessionid": key="sessionId"; break; case "lastactivity": key="lastActivity"; break; default: break;}
     item.put(key,value);
    }
    return item;
