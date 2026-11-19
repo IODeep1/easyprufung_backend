@@ -75,9 +75,11 @@ public class UserController {
                 }
                 catch (Exception e) {}
                 user = userService.createUser(userDTO, ipAddress);
+                if (user == null) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "FAILED_TO_CREATE_USER");
                 Subscription newSubscription = subscriptionService.createFreeSubscription(email);
                 user.setSubscription(newSubscription);
                 user = userService.updateUser(user);
+                userService.sendWelcomeEmail(user);
             }
             else  {
                 user = userService.getUserByEmail(email);
@@ -145,9 +147,11 @@ public class UserController {
             }
             catch (Exception e) {}
             User newUser = userService.createUser(userDTO, ipAddress);
+            if (newUser == null) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "FAILED_TO_CREATE_USER");
             Subscription newSubscription = subscriptionService.createFreeSubscription(userDTO.getEmail());
             newUser.setSubscription(newSubscription);
             newUser = userService.updateUser(newUser);
+            userService.sendWelcomeEmail(newUser);
             if(newUser != null){
                 String token = JwtUtils.getJWTToken(newUser.getEmail(), RoleTags.UserRole);
                 userDTO = userService.getUserDTO(newUser);
