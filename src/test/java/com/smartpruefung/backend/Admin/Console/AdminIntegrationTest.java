@@ -234,6 +234,26 @@ class AdminIntegrationTest {
   }
 
   @Test
+  void directWebsiteEndpointAllowsBothProductionOriginsAndDerivesCountryFromHeader() throws Exception {
+    for(String origin:List.of("https://smartpruefung.com","https://www.smartpruefung.com")) {
+      mvc.perform(options("/api/website-activity").header("Origin",origin)
+        .header("Access-Control-Request-Method","POST").header("Access-Control-Request-Headers","content-type"))
+        .andExpect(status().isOk()).andExpect(header().string("Access-Control-Allow-Origin",origin));
+    }
+    mvc.perform(options("/api/website-activity").header("Origin","https://unrelated.example")
+      .header("Access-Control-Request-Method","POST")).andExpect(status().isForbidden());
+    String visitor=UUID.randomUUID().toString();
+    var event=Map.of("eventId",UUID.randomUUID().toString(),"visitorId",visitor,"type","WEBSITE_CLICKED",
+      "path","/en","target","Open Pricing","language","en","country","US");
+    mvc.perform(post("/api/website-activity").header("Origin","https://smartpruefung.com")
+      .header("CF-IPCountry","DE").contentType(MediaType.APPLICATION_JSON).content(json.writeValueAsString(event)))
+      .andExpect(status().isNoContent()).andExpect(header().string("Access-Control-Allow-Origin","https://smartpruefung.com"));
+    JsonNode list=call("GET","/api/admin/v1/activity?user=visitor:"+visitor,null,root,200);
+    assertEquals(1,list.get("totalElements").asInt());
+    assertEquals("DE",list.get("content").get(0).get("country").asText());
+  }
+
+  @Test
   void anonymousWebsiteActivityValidationDedupeAndAdminCounts() throws Exception {
     String visitor=UUID.randomUUID().toString();
     var event=new HashMap<String,Object>();
