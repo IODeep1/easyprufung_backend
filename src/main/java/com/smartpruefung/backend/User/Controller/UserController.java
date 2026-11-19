@@ -41,6 +41,7 @@ public class UserController {
 
     private final SubscriptionService subscriptionService;
     private final UserService userService;
+    private final com.smartpruefung.backend.User.FollowUp.FounderFollowUpService founderFollowUp;
     @Autowired
     private RestTemplate restTemplate;
     @Autowired
@@ -79,6 +80,7 @@ public class UserController {
                 Subscription newSubscription = subscriptionService.createFreeSubscription(email);
                 user.setSubscription(newSubscription);
                 user = userService.updateUser(user);
+                founderFollowUp.schedule(user);
                 userService.sendWelcomeEmail(user);
             }
             else  {
@@ -151,6 +153,7 @@ public class UserController {
             Subscription newSubscription = subscriptionService.createFreeSubscription(userDTO.getEmail());
             newUser.setSubscription(newSubscription);
             newUser = userService.updateUser(newUser);
+            founderFollowUp.schedule(newUser);
             userService.sendWelcomeEmail(newUser);
             if(newUser != null){
                 String token = JwtUtils.getJWTToken(newUser.getEmail(), RoleTags.UserRole);

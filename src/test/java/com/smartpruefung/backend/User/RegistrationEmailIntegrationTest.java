@@ -38,6 +38,7 @@ class RegistrationEmailIntegrationTest {
     @Autowired MockMvc mvc;
     @Autowired ObjectMapper json;
     @Autowired UsersRepository users;
+    @Autowired com.smartpruefung.backend.User.FollowUp.FounderFollowUpRepository followUps;
     @Autowired @Qualifier("emailExecutor") ThreadPoolTaskExecutor executor;
     // Keep the real @Async mail service/proxy; block only the external SMTP transport.
     @MockBean JavaMailSender smtp;
@@ -72,6 +73,9 @@ class RegistrationEmailIntegrationTest {
         JsonNode user = json.readTree(response.getResponse().getContentAsString());
         assertFalse(user.path("token").asText().isBlank());
         assertFalse(user.path("subscription").isNull());
+        var job=followUps.findByUserUuid(user.path("uuid").asText()).orElseThrow();
+        assertEquals("PENDING",job.getStatus());
+        assertEquals(users.findByEmail(user.path("email").asText()).getCreatedDate().toInstant().plus(Duration.ofDays(2)),job.getDueAt());
         return user;
     }
 
