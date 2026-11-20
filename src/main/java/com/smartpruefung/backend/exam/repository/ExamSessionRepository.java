@@ -12,6 +12,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface ExamSessionRepository extends JpaRepository<ExamSession, UUID> {
+    boolean existsByUserId(String userId);
     @Query("select s from ExamSession s where s.id = :id")
     Optional<ExamSession> findDetailedById(@Param("id") UUID id);
 

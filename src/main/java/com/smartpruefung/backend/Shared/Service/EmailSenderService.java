@@ -11,7 +11,6 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.ui.freemarker.FreeMarkerTemplateUtils;
 
-import javax.mail.MessagingException;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
 import java.util.Map;
@@ -25,11 +24,10 @@ public class EmailSenderService {
     @Autowired
     Configuration fmConfiguration;
 
-    @Async
+    @Async("emailExecutor")
     public void sendEmail(Email mail, String template) {
-        MimeMessage mimeMessage = mailSender.createMimeMessage();
-
         try {
+            MimeMessage mimeMessage = mailSender.createMimeMessage();
             MimeMessageHelper message = new MimeMessageHelper(mimeMessage,true);
             try {
                 // Set the "From" field with a display name
@@ -42,9 +40,9 @@ public class EmailSenderService {
             message.setText(geContentFromTemplate(mail.getModel(), template),true);
             message.setSubject(mail.getSubject());
             mailSender.send(message.getMimeMessage());
-        } catch (MessagingException e) {
-            logger.error(e.getMessage());
-           
+        } catch (Exception e) {
+            // SMTP/template failures belong to the background job, not the signup response.
+            logger.warn("Email delivery failed for template {} ({})", template, e.getClass().getSimpleName());
         }
     }
 
@@ -55,8 +53,7 @@ public class EmailSenderService {
         try {
             content.append(FreeMarkerTemplateUtils.processTemplateIntoString(fmConfiguration.getTemplate(template), model));
         } catch (Exception e) {
-            logger.error(e.getMessage());
-           
+            throw new IllegalStateException("Email template could not be rendered", e);
         }
         return content.toString();
     }

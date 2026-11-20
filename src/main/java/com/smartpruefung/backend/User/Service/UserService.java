@@ -66,7 +66,6 @@ public class UserService {
             user.setPreferredLanguage(preferredLanguage);
             user.setAcquisitionSource(null);
             user.setAcquisitionOnboardingCompleted(false);
-            sendWelcomeEmail(user);
             //mixpanelService.IdentifyUsers(user, ipAddress);
             user = usersRepository.save(user);
             return user;
@@ -194,7 +193,7 @@ public class UserService {
         return "Email sent";
     }
 
-    void sendWelcomeEmail(User user)
+    public void sendWelcomeEmail(User user)
     {
         try {
             Email emailToSend = new Email();
@@ -210,7 +209,7 @@ public class UserService {
             emailSenderService.sendEmail(emailToSend, localizedEmail.getTemplate());
         }
         catch (Exception exc) {
-            logger.error(exc.getMessage());
+            logger.warn("Welcome email could not be queued ({})", exc.getClass().getSimpleName());
         }
     }
 

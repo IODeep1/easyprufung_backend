@@ -23,6 +23,8 @@ import java.util.stream.Collectors;
 
 @Service
 public class ExamGenerationService {
+    @org.springframework.beans.factory.annotation.Autowired
+    private com.smartpruefung.backend.activity.ActivityService activity;
     private static final String AI_SCHEMA_VERSION = "1.0";
     private static final Logger log = LoggerFactory.getLogger(ExamGenerationService.class);
     private final ExamDefinitionService definitionService;
@@ -135,6 +137,7 @@ public class ExamGenerationService {
             );
 
             ExamSession saved = sessionRepository.save(session);
+            activity.exam("EXAM_STARTED", saved.getUserId(), saved.getId());
 
             log.info(
                     "Created exam session {} with {} parts in {} ms",

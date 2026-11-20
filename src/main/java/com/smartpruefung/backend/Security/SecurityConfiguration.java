@@ -17,6 +17,8 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
         http.csrf().disable()
                 .addFilterAfter(new JWTAuthorizationFilter(), UsernamePasswordAuthenticationFilter.class)
                 .authorizeRequests()
+                .antMatchers(HttpMethod.POST, "/api/website-activity").permitAll()
+                .antMatchers(HttpMethod.OPTIONS, "/api/website-activity").permitAll()
                 .antMatchers(HttpMethod.GET, "/api/exams/certificates/*").permitAll()
                 .antMatchers(getProtectedEndPoints()).authenticated()
                 .anyRequest().permitAll();
