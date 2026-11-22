@@ -10,15 +10,23 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 public class ActivityCountry {
  private static final Set<String> CODES=new HashSet<>(Arrays.asList(Locale.getISOCountries()));
  private final String header;
- public ActivityCountry(@Value("${ACTIVITY_COUNTRY_HEADER:cf-ipcountry}") String header) { this.header=header; }
+ private final ActivityClientAddress clients;
+ public ActivityCountry(@Value("${ACTIVITY_COUNTRY_HEADER:cf-ipcountry}") String header,ActivityClientAddress clients) {
+  this.header=header;this.clients=clients;
+ }
  public static String normalize(String value) {
   if(value==null) return null;
   String code=value.trim().toUpperCase(Locale.ROOT);
   return CODES.contains(code)?code:null;
  }
  public String current() {
-  if("none".equalsIgnoreCase(header)) return null;
   var context=RequestContextHolder.getRequestAttributes();
-  return context instanceof ServletRequestAttributes ? normalize(((ServletRequestAttributes)context).getRequest().getHeader(header)) : null;
+  if(!(context instanceof ServletRequestAttributes)) return null;
+  var request=((ServletRequestAttributes)context).getRequest();
+  if(!"none".equalsIgnoreCase(header) && clients.trusted(request)) {
+   String country=normalize(request.getHeader(header));
+   if(country!=null) return country;
+  }
+  return null;
  }
 }

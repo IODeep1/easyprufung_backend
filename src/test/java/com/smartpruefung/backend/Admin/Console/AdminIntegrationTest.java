@@ -23,7 +23,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.*;
 
-@SpringBootTest(properties="smartpruefung.guest.exam-code=GUEST_TEST")
+@SpringBootTest(properties={"smartpruefung.guest.exam-code=GUEST_TEST"})
 @AutoConfigureMockMvc
 @ActiveProfiles("admin-test")
 class AdminIntegrationTest {
@@ -225,12 +225,24 @@ class AdminIntegrationTest {
     String googleSession=guestCall("POST","/start",null,googleGuest,200).get("sessionId").asText();
     guestCall("PUT","/progress",progress,googleGuest,200);guestCall("POST","/finish",null,googleGuest,204);
     String googleEmail=UUID.randomUUID()+"@example.com";
-    org.mockito.Mockito.when(google.getForObject(org.mockito.ArgumentMatchers.anyString(),org.mockito.ArgumentMatchers.eq(String.class)))
-      .thenReturn(json.writeValueAsString(Map.of("email",googleEmail,"given_name","Guest","family_name","Google")));
+    org.mockito.Mockito.when(google.exchange(org.mockito.ArgumentMatchers.anyString(),org.mockito.ArgumentMatchers.eq(org.springframework.http.HttpMethod.GET),org.mockito.ArgumentMatchers.any(org.springframework.http.HttpEntity.class),org.mockito.ArgumentMatchers.eq(String.class)))
+      .thenReturn(org.springframework.http.ResponseEntity.ok(json.writeValueAsString(Map.of("email",googleEmail,"email_verified",true,"given_name","Guest","family_name","Google"))));
     JsonNode googleAccount=call("POST","/public/user/google/login",Map.of("access_token","test-token","preferredLanguage","fr"),null,200);
     claimGuest(googleGuest,googleAccount.get("token").asText(),200);
     assertEquals("a",call("GET","/api/exams/sessions/"+googleSession+"/progress",null,googleAccount.get("token").asText(),200)
       .get("answers").get("1").get("selectedOptionKeys").get(0).asText());
+  }
+
+  @Test
+  void directWebsiteKeepsCountryUnknownWhenOnlyVisitorIpIsPresent() throws Exception {
+    String visitor=UUID.randomUUID().toString();
+    var event=Map.of("eventId",UUID.randomUUID().toString(),"visitorId",visitor,"type","WEBSITE_PAGE_VIEWED","path","/en","language","en");
+    mvc.perform(post("/api/website-activity").header("Origin","https://smartpruefung.com")
+      .header("X-Real-IP","81.2.69.160").contentType(MediaType.APPLICATION_JSON).content(json.writeValueAsString(event)))
+      .andExpect(status().isNoContent());
+    JsonNode list=call("GET","/api/admin/v1/activity?user=visitor:"+visitor,null,root,200);
+    assertTrue(list.get("content").get(0).get("country").isNull());
+    assertFalse(list.toString().contains("81.2.69.160"));
   }
 
   @Test

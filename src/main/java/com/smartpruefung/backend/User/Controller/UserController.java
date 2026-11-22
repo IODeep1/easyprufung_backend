@@ -39,6 +39,7 @@ import java.security.NoSuchAlgorithmException;
 public class UserController {
     private static final Logger logger = LoggerFactory.getLogger(UserController.class);
 
+    private final com.smartpruefung.backend.User.Service.GoogleCodeExchange googleCodeExchange;
     private final SubscriptionService subscriptionService;
     private final UserService userService;
     private final com.smartpruefung.backend.User.FollowUp.FounderFollowUpService founderFollowUp;
@@ -52,12 +53,20 @@ public class UserController {
         try
         {
             String userInfoUri = "https://www.googleapis.com/oauth2/v3/userinfo";
-            String userInfo = restTemplate.getForObject(userInfoUri + "?access_token=" + googleTokenDTO.getAccess_token(), String.class);
+            String accessToken = googleTokenDTO.getCode() != null
+                    ? googleCodeExchange.exchange(googleTokenDTO.getCode(), googleTokenDTO.getCodeVerifier(), googleTokenDTO.getRedirectUri())
+                    : googleTokenDTO.getAccess_token();
+            org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
+            headers.setBearerAuth(accessToken);
+            String userInfo = restTemplate.exchange(userInfoUri, org.springframework.http.HttpMethod.GET,
+                    new org.springframework.http.HttpEntity<>(headers), String.class).getBody();
             JsonNode userInfoNode = objectMapper.readTree(userInfo); // Parse JSON to JsonNode
 
-            String email = userInfoNode.get("email").asText();
-            String firstName = userInfoNode.get("given_name").asText();
-            String lastName = userInfoNode.get("family_name").asText();
+            if (!userInfoNode.path("email_verified").asBoolean(false) || userInfoNode.path("email").asText().isBlank())
+                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "UNVERIFIED_GOOGLE_EMAIL");
+            String email = userInfoNode.path("email").asText();
+            String firstName = userInfoNode.path("given_name").asText("");
+            String lastName = userInfoNode.path("family_name").asText("");
             User user ;
             if(!userService.checkIfUserExist(email)) {
                 UserDTO userDTO = new UserDTO();
@@ -97,18 +106,20 @@ public class UserController {
                 throw new ResponseStatusException(
                         HttpStatus.UNAUTHORIZED, "INVALID_CRIDENTIALS");
             }
+        }catch (ResponseStatusException exc) {
+            throw exc;
         }catch (IllegalArgumentException exc) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, exc.getMessage(), exc);
         }catch (RuntimeException exc) {
-            logger.error(exc.getMessage());
+            logger.warn("Google sign-in failed");
             throw new ResponseStatusException(
                     HttpStatus.UNAUTHORIZED, "UNAUTHORIZED", exc);
         } catch (JsonMappingException e) {
-            logger.error(e.getMessage());
+            logger.warn("Invalid Google profile response");
             throw new ResponseStatusException(
                     HttpStatus.UNAUTHORIZED, "UNAUTHORIZED");
         } catch (JsonProcessingException e) {
-            logger.error(e.getMessage());
+            logger.warn("Invalid Google profile response");
             throw new ResponseStatusException(
                     HttpStatus.UNAUTHORIZED, "UNAUTHORIZED");
         }

@@ -30,7 +30,7 @@ import org.springframework.web.client.RestTemplate;
 
 @SpringBootTest(properties = {
     "spring.datasource.url=jdbc:h2:mem:registration-email-tests;MODE=MySQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE",
-    "smartpruefung.email.workers=1", "smartpruefung.email.queue-capacity=1"
+    "smartpruefung.google.client-secret=unit-test-secret", "smartpruefung.email.workers=1", "smartpruefung.email.queue-capacity=1"
 })
 @AutoConfigureMockMvc
 @ActiveProfiles("admin-test")
@@ -111,11 +111,13 @@ class RegistrationEmailIntegrationTest {
     @Test
     void googleRegistrationIsNonBlockingAndReturningGoogleUserGetsNoSecondWelcome() throws Exception {
         String email = UUID.randomUUID()+"@example.com";
-        when(google.getForObject(anyString(),eq(String.class))).thenReturn(
-                json.writeValueAsString(Map.of("email",email,"given_name","New","family_name","Google")));
+        when(google.exchange(anyString(),eq(org.springframework.http.HttpMethod.GET),any(org.springframework.http.HttpEntity.class),eq(String.class))).thenReturn(
+                org.springframework.http.ResponseEntity.ok(json.writeValueAsString(Map.of("email",email,"email_verified",true,"given_name","New","family_name","Google"))));
+        when(google.postForObject(eq("https://oauth2.googleapis.com/token"),any(org.springframework.http.HttpEntity.class),eq(String.class)))
+                .thenReturn("{\"access_token\":\"fake-google-test-token\"}");
         AtomicReference<MimeMessage> sent = new AtomicReference<>();
         CountDownLatch entered = slowSmtp(email,sent);
-        var input = Map.of("access_token","fake-google-test-token","preferredLanguage","fr");
+        var input = Map.of("code","test-code","codeVerifier","a".repeat(43),"redirectUri","http://localhost:3006/google/callback","preferredLanguage","fr");
         assertTimeoutPreemptively(Duration.ofSeconds(5), () -> register("/public/user/google/login",input));
         assertTrue(entered.await(3,TimeUnit.SECONDS));
         assertTimeoutPreemptively(Duration.ofSeconds(5), () -> register("/public/user/google/login",input));
