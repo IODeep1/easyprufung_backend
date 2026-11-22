@@ -13,9 +13,14 @@ import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
-@RestControllerAdvice(assignableTypes = {AdminApiController.class, AdminAuthController.class})
+@RestControllerAdvice(assignableTypes = {AdminApiController.class, AdminAuthController.class, AdminTeacherController.class})
 @org.springframework.core.annotation.Order(-1)
 public class AdminErrors {
+  @ExceptionHandler(IllegalArgumentException.class)
+  public ResponseEntity<?> input(IllegalArgumentException e) {
+    return ResponseEntity.badRequest().body(Map.of("message", e.getMessage() == null ? "Invalid input" : e.getMessage()));
+  }
+
   @ExceptionHandler(ResponseStatusException.class)
   public ResponseEntity<?> status(ResponseStatusException e) {
     return ResponseEntity.status(e.getStatus())
