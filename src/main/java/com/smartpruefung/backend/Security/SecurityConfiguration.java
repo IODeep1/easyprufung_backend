@@ -20,6 +20,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
                 .antMatchers(HttpMethod.POST, "/api/website-activity").permitAll()
                 .antMatchers(HttpMethod.OPTIONS, "/api/website-activity").permitAll()
                 .antMatchers(HttpMethod.GET, "/api/exams/certificates/*").permitAll()
+                .antMatchers("/api/teacher/**", "/api/student/**", "/api/classes/**").authenticated()
                 .antMatchers(getProtectedEndPoints()).authenticated()
                 .anyRequest().permitAll();
 

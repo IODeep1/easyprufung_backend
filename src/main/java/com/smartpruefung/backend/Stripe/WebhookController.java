@@ -33,6 +33,9 @@ public class WebhookController {
             LoggerFactory.getLogger(WebhookController.class);
 
     @Autowired
+    private com.smartpruefung.backend.teacher.TeacherPayments teacherPayments;
+
+    @Autowired
     UserService userService;
 
     @Autowired
@@ -78,6 +81,22 @@ public class WebhookController {
                     );
                     break;
 
+                case "checkout.session.expired":
+                case "checkout.session.async_payment_failed": {
+                    Session failed = ApiResource.GSON.fromJson(event.getDataObjectDeserializer().getRawJson(), Session.class);
+                    teacherPayments.failedCheckout(event, failed, "checkout.session.expired".equals(event.getType()) ? "EXPIRED" : "FAILED");
+                    break;
+                }
+                case "charge.refunded": {
+                    com.stripe.model.Charge charge = ApiResource.GSON.fromJson(event.getDataObjectDeserializer().getRawJson(), com.stripe.model.Charge.class);
+                    teacherPayments.reverseEvent(event, charge.getPaymentIntent(), "REFUNDED");
+                    break;
+                }
+                case "charge.dispute.created": {
+                    com.stripe.model.Dispute dispute = ApiResource.GSON.fromJson(event.getDataObjectDeserializer().getRawJson(), com.stripe.model.Dispute.class);
+                    teacherPayments.reverseEvent(event, dispute.getPaymentIntent(), "DISPUTED");
+                    break;
+                }
                 default:
                     // One-time payment model:
                     // no recurring subscription events are required.
@@ -120,6 +139,11 @@ public class WebhookController {
                         params,
                         null
                 );
+
+        if (teacherPayments.isTeacher(session)) {
+            teacherPayments.fulfill(event, session);
+            return;
+        }
 
         /*
          * SmartPrüfung now uses Stripe one-time payments only.
@@ -183,132 +207,7 @@ public class WebhookController {
             return;
         }
 
-        String purchasedPlan =
-                priceIdB1Unlimited != null
-                        && priceIdB1Unlimited.equals(paidPriceId)
-                        ? SubscriptionService.PLAN_B1_UNLIMITED
-                        : SubscriptionService.PLAN_B1;
-
-        logger.info(
-                "Processing Stripe Checkout Session {} for plan {} and price {}",
-                session.getId(),
-                purchasedPlan,
-                paidPriceId
-        );
-
-        /*
-         * client_reference_id is set by the frontend to the
-         * SmartPrüfung user's UUID.
-         */
-        String clientReferenceId =
-                session.getClientReferenceId();
-
-        if (clientReferenceId == null
-                || clientReferenceId.isBlank()) {
-
-            throw new IllegalStateException(
-                    "Stripe client_reference_id is missing"
-            );
-        }
-
-        User user =
-                userService.getUserByUUID(
-                        clientReferenceId
-                );
-
-        if (user == null) {
-            throw new IllegalStateException(
-                    "User not found for client_reference_id "
-                            + clientReferenceId
-            );
-        }
-
-        String customerId = session.getCustomer();
-        String customerEmail = user.getEmail();
-
-        /*
-         * Payment Links do not always create a Stripe Customer.
-         * Prefer the Stripe Customer email when available and
-         * otherwise fall back to Checkout customer_details.
-         */
-        if (customerId != null
-                && !customerId.isBlank()) {
-
-            Customer customer =
-                    Customer.retrieve(customerId);
-
-            if (customer.getEmail() != null
-                    && !customer.getEmail().isBlank()) {
-
-                customerEmail =
-                        customer.getEmail();
-            }
-
-        } else if (
-                session.getCustomerDetails() != null
-                        && session
-                                .getCustomerDetails()
-                                .getEmail() != null
-                        && !session
-                                .getCustomerDetails()
-                                .getEmail()
-                                .isBlank()
-        ) {
-            customerEmail =
-                    session
-                            .getCustomerDetails()
-                            .getEmail();
-        }
-
-        Subscription subscription =
-                user.getSubscription();
-
-        /*
-         * The Price ID is the source of truth:
-         *
-         * smartpruefung.stripe.priceidb1
-         *   -> b1
-         *   -> 10 exams
-         *
-         * smartpruefung.stripe.priceidb1unlimited
-         *   -> b1_unlimited
-         *   -> unlimited exams
-         *
-         * SubscriptionService also validates the Price ID,
-         * so an unknown Stripe product cannot accidentally
-         * grant SmartPrüfung access.
-         */
-        if (subscription == null) {
-
-            subscription =
-                    subscriptionService
-                            .createB1PaidSubscriptionByPriceId(
-                                    customerId,
-                                    customerEmail,
-                                    paidPriceId
-                            );
-
-            user.setSubscription(subscription);
-            userService.updateUser(user);
-
-        } else {
-
-            subscriptionService
-                    .activateB1PaidSubscriptionByPriceId(
-                            subscription,
-                            customerId,
-                            customerEmail,
-                            paidPriceId
-                    );
-        }
-
-        logger.info(
-                "Stripe purchase fulfilled for user {} with plan {}",
-                clientReferenceId,
-                purchasedPlan
-        );
-
-        userService.sendNewSubscriptionEmail(user);
+        teacherPayments.fulfillStudent(event, session, paidPriceId);
     }
 
     private String findSupportedPriceId(

@@ -21,6 +21,7 @@ import java.util.stream.Collectors;
 
 @Service
 public class ExamSubmissionService {
+    @javax.persistence.PersistenceContext private javax.persistence.EntityManager entitlementEntityManager;
     @org.springframework.beans.factory.annotation.Autowired
     private com.smartpruefung.backend.activity.ActivityService activity;
     private final ExamSessionRepository sessions;
@@ -61,6 +62,10 @@ public class ExamSubmissionService {
         }*/
 
         User user = userService.getUserByEmail(userEmail);
+        if (user != null) {
+            entitlementEntityManager.lock(user, javax.persistence.LockModeType.PESSIMISTIC_WRITE);
+            entitlementEntityManager.refresh(user);
+        }
         if (user == null || !subscriptionService.hasAvailableQuota(user.getSubscription()))
             throw com.smartpruefung.backend.exam.guest.ExamAccessService.payment();
         Map<String, AnswerPayload> submitted = mergeAnswers(request);
