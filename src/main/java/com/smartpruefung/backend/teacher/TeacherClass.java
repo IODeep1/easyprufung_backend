@@ -7,5 +7,7 @@ public class TeacherClass extends TeacherRecord {
  @Column(name="name", length=255, nullable=false) public String name;
  @Column(name="archived", nullable=false) public boolean archived;
  @Column(name="invite_hash", length=255) public String inviteHash;
+ @com.fasterxml.jackson.annotation.JsonIgnore
+ @Column(name="invite_token", length=43) public String inviteToken;
  @Column(name="invite_expires_at") public Instant inviteExpiresAt;
 }

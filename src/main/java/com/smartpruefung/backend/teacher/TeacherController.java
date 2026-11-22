@@ -28,6 +28,7 @@ public class TeacherController {
  @GetMapping("/api/teacher/classes/{id}") public Object classDetail(@RequestHeader("Authorization") String a,@PathVariable String id) throws Exception {return service.owned(a,id,false);}
  @PatchMapping("/api/teacher/classes/{id}") public Object renameClass(@RequestHeader("Authorization") String a,@PathVariable String id,@RequestBody ClassInput b) throws Exception {return service.updateClass(a,id,b.name,false);}
  @PostMapping("/api/teacher/classes/{id}/archive") public Object archiveClass(@RequestHeader("Authorization") String a,@PathVariable String id) throws Exception {return service.updateClass(a,id,null,true);}
+ @GetMapping("/api/teacher/classes/{id}/invites") public Object currentInvite(@RequestHeader("Authorization") String a,@PathVariable String id){return org.springframework.http.ResponseEntity.ok().cacheControl(org.springframework.http.CacheControl.noStore()).body(service.currentInvite(a,id));}
  @PostMapping("/api/teacher/classes/{id}/invites") public Object createInvite(@RequestHeader("Authorization") String a,@PathVariable String id) throws Exception {return service.invite(a,id,false);}
  @PostMapping("/api/teacher/classes/{id}/invites/rotate") public Object rotateInvite(@RequestHeader("Authorization") String a,@PathVariable String id) throws Exception {return service.invite(a,id,false);}
  @DeleteMapping("/api/teacher/classes/{id}/invites") public Object revokeInvite(@RequestHeader("Authorization") String a,@PathVariable String id) throws Exception {return service.invite(a,id,true);}

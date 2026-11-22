@@ -88,15 +88,22 @@ public class TeacherService {
  public TeacherClass updateClass(String auth,String id,String name,boolean archive) {
   TeacherClass c=owned(auth,id,false); em.lock(c,LockModeType.PESSIMISTIC_WRITE);em.refresh(c);
   if(name!=null)c.name=name(name);
-  if(archive){c.archived=true;c.inviteHash=null;revokeClassOffers(c.id,null);}
+  if(archive){c.archived=true;c.inviteHash=null;c.inviteToken=null;c.inviteExpiresAt=null;revokeClassOffers(c.id,null);}
   audit(c.teacherId,archive?"CLASS_ARCHIVED":"CLASS_RENAMED",id);return c;
  }
+ public Map<String,Object> currentInvite(String auth,String id) {
+  TeacherClass c=owned(auth,id,false);
+  boolean active=!c.archived && c.inviteHash!=null && c.inviteExpiresAt!=null && c.inviteExpiresAt.isAfter(Instant.now());
+  if(!active)return Map.of("active",false);
+  // Older invitations kept only a one-way hash; retrieving them must not silently rotate them.
+  return map("active",true,"token",c.inviteToken==null?"":c.inviteToken,"expiresAt",c.inviteExpiresAt);
+ }
  public Map<String,Object> invite(String auth,String id,boolean revoke) {
-  TeacherClass c=owned(auth,id,true);em.lock(c,LockModeType.PESSIMISTIC_WRITE);
-  if(revoke){c.inviteHash=null; audit(c.teacherId,"INVITE_REVOKED",id);return Map.of("revoked",true);}
+  TeacherClass c=owned(auth,id,true);em.lock(c,LockModeType.PESSIMISTIC_WRITE);em.refresh(c);
+  if(revoke){c.inviteHash=null;c.inviteToken=null;c.inviteExpiresAt=null; audit(c.teacherId,"INVITE_REVOKED",id);return Map.of("revoked",true);}
   byte[] bytes=new byte[32];new SecureRandom().nextBytes(bytes);
   String token=Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
-  c.inviteHash=hash(token);c.inviteExpiresAt=Instant.now().plus(30,ChronoUnit.DAYS);
+  c.inviteToken=token;c.inviteHash=hash(token);c.inviteExpiresAt=Instant.now().plus(30,ChronoUnit.DAYS);
   audit(c.teacherId,"INVITE_ROTATED",id);return Map.of("token",token,"expiresAt",c.inviteExpiresAt);
  }
  private TeacherClass invited(String token) {

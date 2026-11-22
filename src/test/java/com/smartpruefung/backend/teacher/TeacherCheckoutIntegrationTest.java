@@ -88,8 +88,10 @@ public class TeacherCheckoutIntegrationTest {
   call("POST","/api/teacher/seats/checkout",Map.of("quantity",0),teacher,400);call("POST","/api/teacher/seats/checkout",Map.of("quantity",1001),teacher,400);call("POST","/api/teacher/seats/checkout",Map.of("quantity",15.5),teacher,400);call("POST","/api/teacher/seats/checkout",Map.of(),teacher,400);assertEquals(0,checkoutRequests);
   String id=call("POST","/api/teacher/seats/checkout",Map.of("quantity",1),teacher,200).get("orderId").asText();call("GET","/api/teacher/seats/orders/"+id,null,other,404);
  }
- @Test void validatesPriceAmountCurrencyTypeProductAndTaxBeforeCheckout()throws Exception{
-  Price p=prices.get("price_teacher_10plus");p.setUnitAmount(1L);assertThrows(Exception.class,()->payments.checkout(teacher,15));p.setUnitAmount(1599L);p.setCurrency("usd");assertThrows(Exception.class,()->payments.checkout(teacher,15));p.setCurrency("eur");p.setTaxBehavior("exclusive");assertThrows(Exception.class,()->payments.checkout(teacher,15));p.setTaxBehavior("inclusive");p.setProduct("prod_wrong");assertThrows(Exception.class,()->payments.checkout(teacher,15));p.setProduct("prod_teacher_fixture");p.setType("recurring");assertThrows(Exception.class,()->payments.checkout(teacher,15));assertEquals(0,checkoutRequests);assertEquals(0L,teachers.wallet(teacher).get("available"));
+ @Test void validatesPricesWithoutRestrictingTaxBehavior()throws Exception{
+  Price p=prices.get("price_teacher_10plus");p.setUnitAmount(1L);assertThrows(Exception.class,()->payments.checkout(teacher,15));p.setUnitAmount(1599L);p.setCurrency("usd");assertThrows(Exception.class,()->payments.checkout(teacher,15));p.setCurrency("eur");p.setProduct("prod_wrong");assertThrows(Exception.class,()->payments.checkout(teacher,15));p.setProduct("prod_teacher_fixture");p.setType("recurring");assertThrows(Exception.class,()->payments.checkout(teacher,15));assertEquals(0,checkoutRequests);assertEquals(0L,teachers.wallet(teacher).get("available"));
+  p.setType("one_time");for(String behavior:new String[]{"inclusive","exclusive","unspecified"}){p.setTaxBehavior(behavior);call("POST","/api/teacher/seats/checkout",Map.of("quantity",15),teacher,200);}
+  assertEquals(3,checkoutRequests);assertEquals(0L,teachers.wallet(teacher).get("available"));
  }
  @Test void reusesExistingCustomerAndNeverCreditsFromReturn()throws Exception{
   tx().execute(status->{User u=users.findByUUID(teacherId);u.getSubscription().setCustomerId("cus_teacher_existing");return null;});

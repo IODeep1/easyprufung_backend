@@ -74,6 +74,30 @@ public class TeacherIntegrationTest {
   call("POST","/api/student/classes/"+classId+"/leave",null,student,200);
   assertEquals(0,call("GET","/api/teacher/classes/"+classId+"/students",null,teacher,200).size());
  }
+ @Test void invitationRetrievalIsPersistentOwnerOnlyAndRespectsLifecycle()throws Exception{
+  String path="/api/teacher/classes/"+classId+"/invites";
+  assertFalse(call("GET",path,null,teacher,200).get("active").asBoolean());
+  String token=call("POST",path,null,teacher,200).get("token").asText();
+  // Each HTTP request uses a fresh persistence context, as after a page reload.
+  assertEquals(token,call("GET",path,null,teacher,200).get("token").asText());
+  call("GET",path,null,other,404);call("GET",path,null,student,403);call("GET",path,null,null,403);
+  assertFalse(call("GET","/api/teacher/classes/"+classId,null,teacher,200).has("inviteToken"));
+  assertFalse(call("GET","/api/teacher/classes",null,teacher,200).get(0).has("inviteToken"));
+  tx().execute(status->{em.find(TeacherClass.class,classId).inviteToken=null;return null;});
+  JsonNode legacy=call("GET",path,null,teacher,200);assertTrue(legacy.get("active").asBoolean());assertEquals("",legacy.get("token").asText());
+  call("GET","/api/classes/invites/"+token+"/preview",null,student,200);
+  String fresh=call("POST",path+"/rotate",null,teacher,200).get("token").asText();
+  assertEquals(fresh,call("GET",path,null,teacher,200).get("token").asText());
+  call("GET","/api/classes/invites/"+token+"/preview",null,student,404);
+  call("DELETE",path,null,teacher,200);assertFalse(call("GET",path,null,teacher,200).get("active").asBoolean());
+  call("GET","/api/classes/invites/"+fresh+"/preview",null,student,404);
+  call("POST",path,null,teacher,200);
+  tx().execute(status->{em.find(TeacherClass.class,classId).inviteExpiresAt=Instant.now().minusSeconds(1);return null;});
+  assertFalse(call("GET",path,null,teacher,200).get("active").asBoolean());
+  call("POST",path+"/rotate",null,teacher,200);
+  call("POST","/api/teacher/classes/"+classId+"/archive",null,teacher,200);
+  assertFalse(call("GET",path,null,teacher,200).get("active").asBoolean());
+ }
  @Test void fulfillmentIdempotencyAndAcceptance()throws Exception{
   join();TeacherSeatOrder order=seedOrder(2);Event e=event();Session session=paid(order);
   payments.fulfill(e,session);payments.fulfill(e,session);payments.fulfill(event(),session);
