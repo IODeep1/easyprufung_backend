@@ -80,22 +80,6 @@ public class TeacherPayments {
   }
   return selected;
  }
- public Map<String,Object> studentCheckout(String auth,String plan) throws Exception {
-  User user=tx.execute(status->{User u=teachers.actor(auth);if(access.premium(u))throw TeacherService.error(409,"You already have active paid exam access.");return u;});
-  boolean unlimited="b1_unlimited".equals(plan);
-  if(!unlimited && !"b1".equals(plan))throw TeacherService.error(400,"Unknown exam plan.");
-  Stripe.apiKey=environment.getRequiredProperty("smartpruefung.stripe.apisecret");
-  String priceId=environment.getRequiredProperty(unlimited?"smartpruefung.stripe.priceidb1unlimited":"smartpruefung.stripe.priceidb1");
-  Price price=Price.retrieve(priceId);
-  if(!Boolean.TRUE.equals(price.getActive()) || price.getRecurring()!=null || !"eur".equals(price.getCurrency()) || price.getUnitAmount()==null || price.getUnitAmount()!=(unlimited?3999L:1999L))
-   throw TeacherService.error(409,"Checkout is temporarily unavailable. The configured Stripe price must match the advertised EUR price.");
-  String base=environment.getProperty("smartpruefung.teacher.app-url","https://app.smartpruefung.com").replaceAll("/$","");
-  Session session=Session.create(SessionCreateParams.builder().setMode(SessionCreateParams.Mode.PAYMENT)
-   .setClientReferenceId(user.getUuid()).setCustomerEmail(user.getEmail())
-   .setSuccessUrl(base+"/payment_successful").setCancelUrl(base+"/pricing")
-   .addLineItem(SessionCreateParams.LineItem.builder().setPrice(priceId).setQuantity(1L).build()).build());
-  return Map.of("url",session.getUrl());
- }
  public boolean isTeacher(Session session){return session.getMetadata()!=null && "TEACHER_SEATS".equals(session.getMetadata().get("purchaseType")) || session.getClientReferenceId()!=null && session.getClientReferenceId().startsWith("teacher-seat:") || session.getMetadata()!=null && session.getMetadata().containsKey("teacher_seat_order_id");}
  public void fulfill(Event event,Session session) {
   tx.execute(status->{

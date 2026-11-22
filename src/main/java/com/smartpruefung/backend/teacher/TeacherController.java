@@ -18,7 +18,6 @@ public class TeacherController {
   public java.math.BigDecimal quantity;
   public int quantity(){if(quantity==null)throw new IllegalArgumentException("Quantity is required.");try{return quantity.intValueExact();}catch(ArithmeticException ex){throw new IllegalArgumentException("Choose a whole number of seats between 1 and 1000.");}}
  }
- public static class StudentBuyInput {public String plan;}
  public static class StatusInput {public String status;}
  @PostMapping("/api/teacher/apply") public Object apply(@RequestHeader("Authorization") String a) throws Exception {return service.apply(a);}
  @GetMapping("/api/teacher/me") public Object me(@RequestHeader("Authorization") String a) throws Exception {return service.me(a);}
@@ -55,7 +54,6 @@ public class TeacherController {
  @GetMapping("/api/teacher/seats/orders") public Object orders(@RequestHeader("Authorization") String a) throws Exception {return service.orders(a);}
  @PostMapping("/api/teacher/seats/offer") public Object offerSeat(@RequestHeader("Authorization") String a,@RequestBody OfferInput b) throws Exception {return service.offer(a,b.classId,b.studentId);}
  @PostMapping("/api/teacher/seats/offers/{id}/revoke") public Object revokeSeat(@RequestHeader("Authorization") String a,@PathVariable String id) throws Exception {return service.resolveOffer(a,id,"REVOKED");}
- @PostMapping("/api/student/access/checkout") public Object studentCheckout(@RequestHeader("Authorization") String a,@RequestBody StudentBuyInput b) throws Exception {return payments.studentCheckout(a,b.plan);}
  @GetMapping("/api/admin/teacher/profiles") @PreAuthorize("hasRole('ADMIN')") @Transactional
  public Object profiles(){return em.createQuery("from TeacherProfile",TeacherProfile.class).getResultList();}
  @PostMapping("/api/admin/teacher/profiles/{id}/status") @PreAuthorize("hasRole('ADMIN')") @Transactional

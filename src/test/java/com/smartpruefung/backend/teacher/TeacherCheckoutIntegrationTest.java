@@ -29,6 +29,7 @@ import org.springframework.transaction.PlatformTransactionManager;
 @SpringBootTest(properties={"smartpruefung.teacher.checkout-enabled=true","smartpruefung.teacher.approval-required=false","smartpruefung.stripe.apisecret=sk_test_fixture","smartpruefung.stripe.webhooksecret=whsec_fixture","stripe.teacher.price.standard=price_teacher_standard","stripe.teacher.price.10plus=price_teacher_10plus","stripe.teacher.price.25plus=price_teacher_25plus","stripe.teacher.price.50plus=price_teacher_50plus"})
 @AutoConfigureMockMvc @ActiveProfiles("admin-test")
 public class TeacherCheckoutIntegrationTest {
+ @Autowired org.springframework.core.env.Environment environment;
  @Autowired MockMvc mvc; @Autowired ObjectMapper json; @Autowired TeacherPayments payments; @Autowired TeacherService teachers;
  @Autowired UsersRepository users; @Autowired SubscriptionService subscriptions; @Autowired PlatformTransactionManager manager;
  @PersistenceContext EntityManager em;
@@ -111,6 +112,22 @@ public class TeacherCheckoutIntegrationTest {
   String completed=json.writeValueAsString(Map.of("id","evt_completed_"+id,"object","event","type","checkout.session.completed","data",Map.of("object",Map.of("id",session.getId(),"object","checkout.session"))));
   signed(completed);assertEquals(0L,teachers.wallet(teacher).get("available"));
   session.setPaymentStatus("paid");String settled=json.writeValueAsString(Map.of("id","evt_settled_"+id,"object","event","type","checkout.session.async_payment_succeeded","data",Map.of("object",Map.of("id",session.getId(),"object","checkout.session"))));signed(settled);signed(settled);assertEquals(15L,teachers.wallet(teacher).get("available"));assertEquals("free",users.findByUUID(teacherId).getSubscription().getPlan());
+ }
+ @Test void originalPaymentLinksFulfillBothPlansWithoutTeacherSeatCredits()throws Exception{
+  for(boolean unlimited:new boolean[]{false,true}){
+   User buyer=user();String priceId=environment.getRequiredProperty(unlimited?"smartpruefung.stripe.priceidb1unlimited":"smartpruefung.stripe.priceidb1");
+   Session session=new Session();session.setId("cs_payment_link_"+UUID.randomUUID());session.setMode("payment");session.setPaymentStatus("unpaid");session.setClientReferenceId(buyer.getUuid());session.setCurrency("eur");session.setMetadata(Map.of());
+   Price price=new Price();price.setId(priceId);LineItem line=new LineItem();line.setPrice(price);line.setQuantity(1L);LineItemCollection items=new LineItemCollection();items.setData(List.of(line));session.setLineItems(items);sessions.put(session.getId(),session);
+   String completed=json.writeValueAsString(Map.of("id","evt_link_waiting_"+UUID.randomUUID(),"object","event","type","checkout.session.completed","data",Map.of("object",Map.of("id",session.getId(),"object","checkout.session"))));
+   signed(completed);assertEquals("free",users.findByUUID(buyer.getUuid()).getSubscription().getPlan());
+   session.setPaymentStatus("paid");String settled=json.writeValueAsString(Map.of("id","evt_link_paid_"+UUID.randomUUID(),"object","event","type","checkout.session.async_payment_succeeded","data",Map.of("object",Map.of("id",session.getId(),"object","checkout.session"))));
+   signed(settled);assertEquals(unlimited?"b1_unlimited":"b1",users.findByUUID(buyer.getUuid()).getSubscription().getPlan());
+   if(!unlimited){assertEquals(10,users.findByUUID(buyer.getUuid()).getSubscription().getQuota());tx().execute(status->{subscriptions.consumeQuota(users.findByUUID(buyer.getUuid()).getSubscription());return null;});}
+   signed(settled);signed(json.writeValueAsString(Map.of("id","evt_link_retry_"+UUID.randomUUID(),"object","event","type","checkout.session.completed","data",Map.of("object",Map.of("id",session.getId(),"object","checkout.session")))));
+   if(!unlimited)assertEquals(9,users.findByUUID(buyer.getUuid()).getSubscription().getQuota());
+   assertEquals(0L,teachers.wallet(teacher).get("available"));
+  }
+  assertEquals(0,checkoutRequests);
  }
  void signed(String payload)throws Exception{
   long now=Instant.now().getEpochSecond();javax.crypto.Mac mac=javax.crypto.Mac.getInstance("HmacSHA256");mac.init(new javax.crypto.spec.SecretKeySpec("whsec_fixture".getBytes(java.nio.charset.StandardCharsets.UTF_8),"HmacSHA256"));StringBuilder signature=new StringBuilder();for(byte b:mac.doFinal((now+"."+payload).getBytes(java.nio.charset.StandardCharsets.UTF_8)))signature.append(String.format("%02x",b));
