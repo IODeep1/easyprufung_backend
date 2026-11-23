@@ -70,7 +70,7 @@ public class TeacherPayments {
  private Price teacherPrice(int quantity,RequestOptions options) throws Exception {
   String product=null;Price selected=null;
   for(Map<String,Object> tier:SeatPricing.schedule()){
-   String code=(String)tier.get("code");String id=environment.getProperty("stripe.teacher.price."+code,"").trim();
+   String code=(String)tier.get("code");String id=environment.getProperty("smartpruefung.stripe.teacher.price."+code,"").trim();
    if(!id.startsWith("price_"))throw TeacherService.error(409,"Teacher checkout is not configured. Set all four teacher Stripe Price IDs.");
    Price price=Price.retrieve(id,options);
    if(!Boolean.TRUE.equals(price.getActive()) || !"one_time".equals(price.getType()) || price.getRecurring()!=null || price.getTransformQuantity()!=null || price.getCustomUnitAmount()!=null || !"per_unit".equals(price.getBillingScheme()) || !"eur".equals(price.getCurrency()) || price.getUnitAmount()==null || price.getUnitAmount().longValue()!=((Integer)tier.get("unitPriceCents")).longValue())

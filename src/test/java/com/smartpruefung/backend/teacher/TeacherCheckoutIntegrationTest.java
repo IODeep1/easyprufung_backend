@@ -26,7 +26,7 @@ import org.springframework.http.MediaType;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.transaction.PlatformTransactionManager;
 
-@SpringBootTest(properties={"smartpruefung.teacher.checkout-enabled=true","smartpruefung.teacher.approval-required=false","smartpruefung.stripe.apisecret=sk_test_fixture","smartpruefung.stripe.webhooksecret=whsec_fixture","stripe.teacher.price.standard=price_teacher_standard","stripe.teacher.price.10plus=price_teacher_10plus","stripe.teacher.price.25plus=price_teacher_25plus","stripe.teacher.price.50plus=price_teacher_50plus"})
+@SpringBootTest(properties={"smartpruefung.teacher.checkout-enabled=true","smartpruefung.teacher.approval-required=false","smartpruefung.stripe.apisecret=sk_test_fixture","smartpruefung.stripe.webhooksecret=whsec_fixture","smartpruefung.stripe.teacher.price.standard=price_teacher_standard","smartpruefung.stripe.teacher.price.10plus=price_teacher_10plus","smartpruefung.stripe.teacher.price.25plus=price_teacher_25plus","smartpruefung.stripe.teacher.price.50plus=price_teacher_50plus"})
 @AutoConfigureMockMvc @ActiveProfiles("admin-test")
 public class TeacherCheckoutIntegrationTest {
  @Autowired org.springframework.core.env.Environment environment;
