@@ -37,7 +37,7 @@ public class ExamViewMapper {
                 }).collect(Collectors.toList());
         return new ExamSessionView(session.getId(), definition.getCode(), definition.getTitle(),
                 definition.getProvider(), definition.getLevel(), session.getDefinitionVersion(), session.getStatus(),
-                session.getStartedAt(), session.getExpiresAt(), exercises);
+                session.getStartedAt(), session.getExpiresAt(), exercises, session.getFormat());
     }
 
     public ExamResultView toView(ExamResult result) {
@@ -61,7 +61,8 @@ public class ExamViewMapper {
                 session.getCreatedAt(),
                 session.getStartedAt(),
                 session.getExpiresAt(),
-                session.getSubmittedAt()
+                session.getSubmittedAt(),
+                session.getFormat()
         );
     }
 }

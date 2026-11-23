@@ -56,9 +56,13 @@ public class GuestExamService {
  private String owner(GuestExam g){return "guest:"+g.getId();}
  @Transactional
  public ExamSessionView start(String token){
+  return start(token, ExamFormat.DIGITAL);
+ }
+ @Transactional
+ public ExamSessionView start(String token, ExamFormat format){
   GuestExam guest=resolve(token,false);
   if(guest.getSessionId()!=null) return queries.getSession(guest.getSessionId());
-  StartExamRequest request=new StartExamRequest(owner(guest),ExamProvider.TELC,CefrLevel.B1,code);
+  StartExamRequest request=new StartExamRequest(owner(guest),ExamProvider.TELC,CefrLevel.B1,code,format);
   ExamSessionView view=generation.start(request);guest.setSessionId(view.getSessionId());return view;
  }
  @Transactional

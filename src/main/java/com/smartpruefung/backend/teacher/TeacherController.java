@@ -1,5 +1,6 @@
 package com.smartpruefung.backend.teacher;
 import org.springframework.web.bind.annotation.*;
+import com.smartpruefung.backend.exam.domain.ExamFormat;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.transaction.annotation.Transactional;
 import javax.persistence.*;
@@ -42,7 +43,7 @@ public class TeacherController {
  @GetMapping("/api/student/classes") public Object studentClasses(@RequestHeader("Authorization") String a) throws Exception {return service.studentClasses(a);}
  @PostMapping("/api/student/classes/{id}/leave") public Object leaveClass(@RequestHeader("Authorization") String a,@PathVariable String id) throws Exception {service.leave(a,id,null);return Map.of("left",true);}
  @GetMapping("/api/student/assignments") public Object studentAssignments(@RequestHeader("Authorization") String a) throws Exception {return service.studentAssignments(a);}
- @PostMapping("/api/student/assignments/{id}/start") public Object startAssignment(@RequestHeader("Authorization") String a,@PathVariable String id) throws Exception {return service.startAssignment(a,id);}
+ @PostMapping("/api/student/assignments/{id}/start") public Object startAssignment(@RequestHeader("Authorization") String a,@PathVariable String id,@RequestParam(name="format", defaultValue="DIGITAL") ExamFormat format) throws Exception {return service.startAssignment(a,id,format);}
  @GetMapping("/api/student/seat-offers") public Object studentOffers(@RequestHeader("Authorization") String a) throws Exception {return service.studentOffers(a);}
  @PostMapping("/api/student/seat-offers/{id}/accept") public Object acceptSeat(@RequestHeader("Authorization") String a,@PathVariable String id) throws Exception {return service.resolveOffer(a,id,"ACCEPTED");}
  @PostMapping("/api/student/seat-offers/{id}/decline") public Object declineSeat(@RequestHeader("Authorization") String a,@PathVariable String id) throws Exception {return service.resolveOffer(a,id,"DECLINED");}

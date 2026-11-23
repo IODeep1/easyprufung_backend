@@ -1,6 +1,7 @@
 package com.smartpruefung.backend.exam.dto;
 
 import com.smartpruefung.backend.exam.domain.CefrLevel;
+import com.smartpruefung.backend.exam.domain.ExamFormat;
 import com.smartpruefung.backend.exam.domain.ExamProvider;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -14,4 +15,10 @@ public class StartExamRequest {
     @NotNull private ExamProvider provider;
     @NotNull private CefrLevel level;
     private String examCode;
+    private ExamFormat format = ExamFormat.DIGITAL;
+
+    public StartExamRequest(String userId, ExamProvider provider, CefrLevel level, String examCode) {
+        this(userId, provider, level, examCode, ExamFormat.DIGITAL);
+    }
+
 }

@@ -15,6 +15,15 @@ import java.util.List;
 public class ExamSession extends BaseEntity {
     @Column(name = "user_id", nullable = false)
     private String userId;
+    // Nullable for existing rows; pre-format sessions retain the digital UI.
+    @Enumerated(EnumType.STRING)
+    @Column(name = "exam_format", length = 16)
+    private ExamFormat format;
+
+    public ExamFormat getFormat() {
+        return format == null ? ExamFormat.DIGITAL : format;
+    }
+
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     private ExamDefinition examDefinition;
     @Column(nullable = false)

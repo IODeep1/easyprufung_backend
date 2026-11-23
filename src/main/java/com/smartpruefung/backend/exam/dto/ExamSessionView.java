@@ -1,6 +1,7 @@
 package com.smartpruefung.backend.exam.dto;
 
 import com.smartpruefung.backend.exam.domain.CefrLevel;
+import com.smartpruefung.backend.exam.domain.ExamFormat;
 import com.smartpruefung.backend.exam.domain.ExamProvider;
 import com.smartpruefung.backend.exam.domain.SessionStatus;
 import lombok.AllArgsConstructor;
@@ -22,4 +23,5 @@ public class ExamSessionView {
     private Instant startedAt;
     private Instant expiresAt;
     private List<ExerciseView> exercises;
+    private ExamFormat format = ExamFormat.DIGITAL;
 }

@@ -213,12 +213,15 @@ public class TeacherService {
  }
  /** Uses normal start/quota logic. An unrelated active exam must be finished first, never attached retroactively. */
  public ExamSessionView startAssignment(String auth,String id) {
+  return startAssignment(auth,id,ExamFormat.DIGITAL);
+ }
+ public ExamSessionView startAssignment(String auth,String id,ExamFormat format) {
   String u=actor(auth).getUuid();access.lockUser(u);
   ClassAssignment a=require(ClassAssignment.class,id);ClassMembership m=enrolled(a.classId,u);
   AssignmentStudent s=em.createQuery("from AssignmentStudent where assignmentId=:a and studentId=:u",AssignmentStudent.class).setParameter("a",id).setParameter("u",u).getResultStream().findFirst().orElseThrow(()->error(404,"Assignment not found."));
   if(s.attemptId!=null)throw error(409,"This assignment already has an attempt. Resume it from Exams.");
   if(sessions.findFirstByUserIdAndStatusOrderByCreatedAtDesc(u,SessionStatus.IN_PROGRESS).isPresent())throw error(409,"Finish your current exam before starting this assignment.");
-  ExamSessionView view=access.start(new StartExamRequest(u,ExamProvider.TELC,CefrLevel.B1,a.examCode));
+  ExamSessionView view=access.start(new StartExamRequest(u,ExamProvider.TELC,CefrLevel.B1,a.examCode,format));
   s.attemptId=view.getSessionId().toString();audit(u,"ASSIGNMENT_STARTED",id);return view;
  }
  public Map<String,Object> wallet(String auth) {

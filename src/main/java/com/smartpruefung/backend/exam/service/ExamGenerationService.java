@@ -88,6 +88,7 @@ public class ExamGenerationService {
         try {
             ExamSession session = new ExamSession();
             session.setUserId(request.getUserId());
+            session.setFormat(request.getFormat());
             session.setExamDefinition(definition);
             session.setDefinitionVersion(definition.getDefinitionVersion());
             session.setStatus(SessionStatus.IN_PROGRESS);
