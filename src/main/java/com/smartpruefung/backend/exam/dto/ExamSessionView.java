@@ -24,4 +24,13 @@ public class ExamSessionView {
     private Instant expiresAt;
     private List<ExerciseView> exercises;
     private ExamFormat format = ExamFormat.DIGITAL;
+
+    /** Preserve callers created before exam formats were introduced. */
+    public ExamSessionView(UUID sessionId, String examCode, String title,
+                           ExamProvider provider, CefrLevel level, int definitionVersion,
+                           SessionStatus status, Instant startedAt, Instant expiresAt,
+                           List<ExerciseView> exercises) {
+        this(sessionId, examCode, title, provider, level, definitionVersion, status,
+                startedAt, expiresAt, exercises, ExamFormat.DIGITAL);
+    }
 }

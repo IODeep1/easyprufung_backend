@@ -39,7 +39,6 @@ public class AdminTeacherIntegrationTest {
  @MockBean org.springframework.web.client.RestTemplate google;
  @MockBean com.smartpruefung.backend.Shared.Service.EmailSenderService emailSender;
  String root;
- @BeforeEach void login()throws Exception{root=staff("SuperAdmin");}
 
   String staff(String role) throws Exception {
     String email = UUID.randomUUID() + "@staff.example.com";
@@ -103,6 +102,8 @@ public class AdminTeacherIntegrationTest {
  final String base="/api/admin/v1/teacher-mode";
  TransactionTemplate tx(){return new TransactionTemplate(manager);}
  @BeforeEach void seed()throws Exception{
+  // Authentication must precede fixture requests; JUnit does not order sibling @BeforeEach methods by source order.
+  root=staff("SuperAdmin");
   JsonNode t=createUser(),s=createUser();teacherId=t.get("uuid").asText();studentId=s.get("uuid").asText();email=t.get("email").asText();customerToken=JwtUtils.getJWTToken(email,"ROLE_USER");
   tx().execute(status->{
    TeacherProfile p=new TeacherProfile();p.userId=teacherId;p.status="PENDING";em.persist(p);profileId=p.id;
@@ -164,7 +165,7 @@ public class AdminTeacherIntegrationTest {
  public static void main(String[] args)throws Exception{
   var context=new org.springframework.test.context.TestContextManager(AdminTeacherIntegrationTest.class);int count=0;
   try{for(var method:AdminTeacherIntegrationTest.class.getDeclaredMethods())if(method.isAnnotationPresent(Test.class)){
-   AdminTeacherIntegrationTest test=new AdminTeacherIntegrationTest();context.prepareTestInstance(test);test.login();test.seed();try{method.invoke(test);System.out.println("PASS "+method.getName());count++;}catch(java.lang.reflect.InvocationTargetException ex){throw new AssertionError(method.getName(),ex.getCause());}
+   AdminTeacherIntegrationTest test=new AdminTeacherIntegrationTest();context.prepareTestInstance(test);test.seed();try{method.invoke(test);System.out.println("PASS "+method.getName());count++;}catch(java.lang.reflect.InvocationTargetException ex){throw new AssertionError(method.getName(),ex.getCause());}
   }System.out.println("Admin teacher tests passed: "+count);}finally{context.getTestContext().markApplicationContextDirty(org.springframework.test.annotation.DirtiesContext.HierarchyMode.EXHAUSTIVE);}
  }
 }

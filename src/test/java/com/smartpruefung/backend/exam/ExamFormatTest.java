@@ -27,6 +27,10 @@ public class ExamFormatTest {
     @Test void oldRequestsAndSessionsDefaultToDigital() throws Exception {
         assertEquals(ExamFormat.DIGITAL, json.readValue("{}", StartExamRequest.class).getFormat());
         assertEquals(ExamFormat.DIGITAL, new StartExamRequest("u", ExamProvider.TELC, CefrLevel.B1, "B1").getFormat());
+        assertEquals(ExamFormat.DIGITAL, new ExamSessionView(UUID.randomUUID(), "B1", "Deutsch B1",
+                ExamProvider.TELC, CefrLevel.B1, 1, SessionStatus.IN_PROGRESS, null, null, List.of()).getFormat());
+        assertEquals(ExamFormat.PAPER, new ExamSessionView(UUID.randomUUID(), "B1", "Deutsch B1",
+                ExamProvider.TELC, CefrLevel.B1, 1, SessionStatus.IN_PROGRESS, null, null, List.of(), ExamFormat.PAPER).getFormat());
         ExamSession session = session();
         assertEquals(ExamFormat.DIGITAL, mapper.toView(session).getFormat());
         assertEquals(ExamFormat.DIGITAL, mapper.toSummary(session).getFormat());
