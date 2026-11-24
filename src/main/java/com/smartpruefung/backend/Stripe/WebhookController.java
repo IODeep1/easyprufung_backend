@@ -36,6 +36,9 @@ public class WebhookController {
     private com.smartpruefung.backend.teacher.TeacherPayments teacherPayments;
 
     @Autowired
+    private com.smartpruefung.backend.partner.PartnerStripeService partnerStripe;
+
+    @Autowired
     UserService userService;
 
     @Autowired
@@ -71,6 +74,13 @@ public class WebhookController {
                     webHookSecret
             );
 
+            boolean partnerQueueFailed = false;
+            try { partnerStripe.enqueue(event); }
+            catch (Exception queueError) {
+                partnerQueueFailed = true;
+                logger.warn("Partner inbox could not persist verified event {}", event.getId());
+            }
+
             switch (event.getType()) {
                 case "checkout.session.completed":
                 case "checkout.session.async_payment_succeeded":
@@ -102,6 +112,9 @@ public class WebhookController {
                     // no recurring subscription events are required.
                     break;
             }
+
+            // Fulfillment above must still complete when accounting is temporarily unavailable.
+            if (partnerQueueFailed) return ResponseEntity.status(503).body("Payment access handled; accounting retry required.");
 
             return ResponseEntity.ok(
                     "Webhook handled: " + event.getType()

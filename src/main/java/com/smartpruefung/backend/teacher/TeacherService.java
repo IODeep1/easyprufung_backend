@@ -60,7 +60,9 @@ public class TeacherService {
  TeacherProfile profile(User u) { return first(TeacherProfile.class,"userId",u.getUuid()); }
  public Map<String,Object> me(String auth) {
   User u=actor(auth); TeacherProfile p=profile(u);
-  return Map.of("status",p==null?"NOT_REGISTERED":p.status,"checkoutEnabled",env.getProperty("smartpruefung.teacher.checkout-enabled",Boolean.class,false));
+  if(p==null && em.createQuery("select count(p) from PartnerProfile p where p.userId=:u",Long.class).setParameter("u",u.getUuid()).getSingleResult()>0) return apply(auth);
+  String partnerStatus=em.createQuery("select p.status from PartnerProfile p where p.userId=:u",String.class).setParameter("u",u.getUuid()).getResultStream().findFirst().orElse("NOT_REGISTERED");
+  return Map.of("status",p==null?"NOT_REGISTERED":p.status,"partnerStatus",partnerStatus,"checkoutEnabled",env.getProperty("smartpruefung.teacher.checkout-enabled",Boolean.class,false));
  }
  public Map<String,Object> apply(String auth) {
   User u=access.lockUser(actor(auth).getUuid());
