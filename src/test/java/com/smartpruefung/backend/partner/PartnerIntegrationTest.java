@@ -23,6 +23,7 @@ import javax.persistence.*;
 import java.time.*;
 import java.util.*;
 
+@org.springframework.test.context.TestPropertySource(locations="classpath:integration-fixtures.properties")
 @SpringBootTest(properties={"smartpruefung.guest.exam-code=GUEST_TEST","smartpruefung.partner.encryption-key=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=","smartpruefung.partner.scheduling-enabled=false","smartpruefung.partner.live-mode=false","smartpruefung.stripe.priceidb1=price_10","smartpruefung.stripe.priceidb1unlimited=price_unlimited","logging.level.root=ERROR"})
 @AutoConfigureMockMvc @ActiveProfiles("admin-test")
 class PartnerIntegrationTest {

@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 import com.fasterxml.jackson.databind.*;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.smartpruefung.backend.User.User;
 import com.smartpruefung.backend.User.Repository.UsersRepository;
 import com.smartpruefung.backend.User.Service.SubscriptionService;
@@ -26,6 +27,7 @@ import org.springframework.http.MediaType;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.transaction.PlatformTransactionManager;
 
+@org.springframework.test.context.TestPropertySource(locations="classpath:integration-fixtures.properties")
 @SpringBootTest(properties={"smartpruefung.teacher.checkout-enabled=true","smartpruefung.teacher.approval-required=false","smartpruefung.stripe.apisecret=sk_test_fixture","smartpruefung.stripe.webhooksecret=whsec_fixture","smartpruefung.stripe.teacher.price.standard=price_teacher_standard","smartpruefung.stripe.teacher.price.10plus=price_teacher_10plus","smartpruefung.stripe.teacher.price.25plus=price_teacher_25plus","smartpruefung.stripe.teacher.price.50plus=price_teacher_50plus"})
 @AutoConfigureMockMvc @ActiveProfiles("admin-test")
 public class TeacherCheckoutIntegrationTest {
@@ -130,6 +132,10 @@ public class TeacherCheckoutIntegrationTest {
   assertEquals(0,checkoutRequests);
  }
  void signed(String payload)throws Exception{
+  ObjectNode envelope=(ObjectNode)json.readTree(payload);
+  if(!envelope.has("created"))envelope.put("created",Instant.now().getEpochSecond());
+  if(!envelope.has("livemode"))envelope.put("livemode",false);
+  payload=json.writeValueAsString(envelope);
   long now=Instant.now().getEpochSecond();javax.crypto.Mac mac=javax.crypto.Mac.getInstance("HmacSHA256");mac.init(new javax.crypto.spec.SecretKeySpec("whsec_fixture".getBytes(java.nio.charset.StandardCharsets.UTF_8),"HmacSHA256"));StringBuilder signature=new StringBuilder();for(byte b:mac.doFinal((now+"."+payload).getBytes(java.nio.charset.StandardCharsets.UTF_8)))signature.append(String.format("%02x",b));
   mvc.perform(post("/public/stripe/webhook").contentType(MediaType.APPLICATION_JSON).header("Stripe-Signature","t="+now+",v1="+signature).content(payload)).andExpect(status().isOk());
  }

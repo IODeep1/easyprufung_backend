@@ -28,6 +28,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.*;
 import org.springframework.web.client.RestTemplate;
 
+@org.springframework.test.context.TestPropertySource(locations="classpath:integration-fixtures.properties")
 @SpringBootTest(properties = {
     "spring.datasource.url=jdbc:h2:mem:registration-email-tests;MODE=MySQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE",
     "smartpruefung.google.client-secret=unit-test-secret", "smartpruefung.email.workers=1", "smartpruefung.email.queue-capacity=1"

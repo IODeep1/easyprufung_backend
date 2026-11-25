@@ -23,6 +23,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.*;
 
+@org.springframework.test.context.TestPropertySource(locations="classpath:integration-fixtures.properties")
 @SpringBootTest(properties={"smartpruefung.guest.exam-code=GUEST_TEST"})
 @AutoConfigureMockMvc
 @ActiveProfiles("admin-test")

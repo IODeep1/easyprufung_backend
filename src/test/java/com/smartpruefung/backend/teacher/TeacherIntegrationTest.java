@@ -28,6 +28,7 @@ import org.springframework.http.MediaType;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.transaction.PlatformTransactionManager;
 
+@org.springframework.test.context.TestPropertySource(locations="classpath:integration-fixtures.properties")
 @SpringBootTest(properties={"smartpruefung.teacher.checkout-enabled=false","smartpruefung.teacher.approval-required=false","smartpruefung.guest.exam-code=GUEST_TEST","smartpruefung.stripe.webhooksecret=whsec_teacher_test","smartpruefung.stripe.apisecret=sk_test_not_real"})
 @AutoConfigureMockMvc @ActiveProfiles("admin-test")
 public class TeacherIntegrationTest {
@@ -166,7 +167,10 @@ public class TeacherIntegrationTest {
   try{
    String payload="{\"id\":\"evt_signed_"+order.id+"\",\"object\":\"event\",\"type\":\"checkout.session.completed\",\"data\":{\"object\":{\"id\":\""+order.stripeSessionId+"\",\"object\":\"checkout.session\"}}}";
    mvc.perform(post("/public/stripe/webhook").contentType(MediaType.APPLICATION_JSON).header("Stripe-Signature","invalid").content(payload)).andExpect(status().isBadRequest());assertEquals(0L,teachers.wallet(teacher).get("available"));
-   long now=Instant.now().getEpochSecond();javax.crypto.Mac mac=javax.crypto.Mac.getInstance("HmacSHA256");mac.init(new javax.crypto.spec.SecretKeySpec("whsec_teacher_test".getBytes(java.nio.charset.StandardCharsets.UTF_8),"HmacSHA256"));StringBuilder signature=new StringBuilder();for(byte b:mac.doFinal((now+"."+payload).getBytes(java.nio.charset.StandardCharsets.UTF_8)))signature.append(String.format("%02x",b));
+   long now=Instant.now().getEpochSecond();
+   com.fasterxml.jackson.databind.node.ObjectNode envelope=(com.fasterxml.jackson.databind.node.ObjectNode)json.readTree(payload);
+   envelope.put("created",now);envelope.put("livemode",false);payload=json.writeValueAsString(envelope);
+   javax.crypto.Mac mac=javax.crypto.Mac.getInstance("HmacSHA256");mac.init(new javax.crypto.spec.SecretKeySpec("whsec_teacher_test".getBytes(java.nio.charset.StandardCharsets.UTF_8),"HmacSHA256"));StringBuilder signature=new StringBuilder();for(byte b:mac.doFinal((now+"."+payload).getBytes(java.nio.charset.StandardCharsets.UTF_8)))signature.append(String.format("%02x",b));
    for(int i=0;i<2;i++)mvc.perform(post("/public/stripe/webhook").contentType(MediaType.APPLICATION_JSON).header("Stripe-Signature","t="+now+",v1="+signature).content(payload)).andExpect(status().isOk());
    assertEquals(2L,teachers.wallet(teacher).get("available"));
   }finally{ApiResource.setStripeResponseGetter(original);}

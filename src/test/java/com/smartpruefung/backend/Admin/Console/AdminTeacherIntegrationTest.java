@@ -29,6 +29,7 @@ import org.springframework.http.MediaType;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
+@org.springframework.test.context.TestPropertySource(locations="classpath:integration-fixtures.properties")
 @SpringBootTest(properties={"smartpruefung.guest.exam-code=GUEST_TEST"})
 @AutoConfigureMockMvc @ActiveProfiles("admin-test")
 public class AdminTeacherIntegrationTest {
